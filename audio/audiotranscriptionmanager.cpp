@@ -1,0 +1,96 @@
+#include "audiotranscriptionmanager.h"
+#include <QString>
+#include "QPermission"
+#include <QMessageBox>
+#include <QApplication>
+#include "../widgets/microphonewidget.h"
+#include "../mainwindow.h"
+
+// android and others will have equivalent file
+#include "whisperinterface.h"
+
+AudioTranscriptionManager *AudioTranscriptionManager::singleton = NULL;
+
+AudioTranscriptionManager::AudioTranscriptionManager() {
+    if (!singleton) {
+        singleton = this;
+    }
+
+    init();
+
+    setupAudioCapture();
+
+    updateLevelTimer.setSingleShot(false);
+    updateLevelTimer.setInterval(10);
+
+    connect(&updateLevelTimer, &QTimer::timeout, this, &AudioTranscriptionManager::updateLevel);
+}
+
+AudioTranscriptionManager *AudioTranscriptionManager::self()
+{
+    if (!singleton) {
+        singleton = new AudioTranscriptionManager();
+    }
+    return singleton;
+}
+
+void AudioTranscriptionManager::init()
+{
+#if QT_CONFIG(permissions)
+    QMicrophonePermission microphonePermission;
+    switch (qApp->checkPermission(microphonePermission)) {
+    case Qt::PermissionStatus::Undetermined:
+        qApp->requestPermission(microphonePermission, this, &AudioTranscriptionManager::init);
+        return;
+    case Qt::PermissionStatus::Denied:
+        QMessageBox::warning(NULL, "Permission Error", "Microphone permission is not granted!");
+        return;
+    case Qt::PermissionStatus::Granted:
+        break;
+    }
+#endif
+}
+
+void AudioTranscriptionManager::toggleStart()
+{
+    if (!updateLevelTimer.isActive()) {
+        start();
+    } else {
+        stop();
+    }
+}
+
+void AudioTranscriptionManager::start() {
+    startAudioCapture();
+    updateLevelTimer.start();
+    MicrophoneWidget::self()->expand();
+}
+
+void AudioTranscriptionManager::stop() {
+    MainWindow::self()->sendChat();
+    MicrophoneWidget::self()->collapse();
+    updateLevelTimer.stop();
+    MicrophoneWidget::self()->setLevel(0.0);
+    stopAudioCapture();
+}
+
+bool AudioTranscriptionManager::isRecording()
+{
+    return updateLevelTimer.isActive();
+}
+
+void AudioTranscriptionManager::updateLevel()
+{
+    float level = getCurrentLevel();
+    MicrophoneWidget::self()->setLevel(level);
+}
+
+
+
+
+
+
+
+
+
+
