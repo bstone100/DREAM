@@ -57,6 +57,7 @@ public:
     void addMessage(OpenAIMessage *newMessage);
     void removeMessage(OpenAIMessage *message);
     void removeAllMessages();
+    void removeAllMessagesExceptSystem();
 
     void removeAllScenegraphs();
     void removeAllInstructions();

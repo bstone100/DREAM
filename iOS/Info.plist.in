@@ -51,6 +51,12 @@
         <key>NSCameraUsageDescription</key>
         <string>The app does not need camera access.</string>
 
+        <key>NSLocationUsageDescription</key>
+        <string>The app makes a record of the location at which you had your dreams.</string>
+
+        <key>NSLocationWhenInUseUsageDescription</key>
+        <string>The app makes a record of the location at which you had your dreams.</string>
+
 	<key>NSSupportsAutomaticGraphicsSwitching</key>
 	<true/>
 
@@ -59,3 +65,9 @@
 
 </dict>
 </plist>
+
+
+
+
+
+

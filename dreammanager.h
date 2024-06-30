@@ -19,7 +19,6 @@ public:
     void removeDream(const QString &dreamId);
 
     QList<Dream> getAllDreams();
-    Dream getNewestOriginalDream();
 
     Dream getDream(const QString &dreamId) const;
     bool containsDream(const QString &dreamId) const;

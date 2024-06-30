@@ -63,6 +63,8 @@ public:
     static double interpolate(double startVal, double endVal, double progress);
     static void smartSetVisible(QList<QWidget *> widgets, bool visible, int duration = 500, QEasingCurve::Type curveType = QEasingCurve::Linear);
 
+    QString getNewOriginalDreamID() const;
+
 protected:
     void closeEvent(QCloseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
@@ -104,6 +106,11 @@ private:
     };
 
     Gesture currentGesture = Undefined;
+
+    // dream
+
+    QString newOriginalDreamID;
+    void handleLocationObtained(QString text);
 
 };
 

@@ -203,7 +203,7 @@ void OpenAIRequest::sendChatCompletionsRequest()
 
             if (tool_calls.isEmpty()) {
                 // it's done making function calls and we have a message response
-                removeAllTimestamps();
+                removeAllMessagesExceptSystem();
 
                 emit requestFinished(content);
             } else {
@@ -549,6 +549,20 @@ void OpenAIRequest::removeAllMessages()
 {
     qDeleteAll(m_messages);
     m_messages.clear();
+}
+
+void OpenAIRequest::removeAllMessagesExceptSystem()
+{
+    if (m_messages.isEmpty()) return;
+
+    auto systemMessage = m_messages.first();
+    foreach (auto message, m_messages) {
+        if (message != systemMessage) {
+            delete message;
+        }
+    }
+    m_messages.clear();
+    m_messages.append(systemMessage);
 }
 
 void OpenAIRequest::removeAllScenegraphs()

@@ -41,20 +41,6 @@ QList<Dream> DreamManager::getAllDreams()
     return idToDreamMap.values();
 }
 
-// returns the dream with the original transcript that was just recorded
-Dream DreamManager::getNewestOriginalDream()
-{
-    auto dreams = getAllDreams();
-    std::sort(dreams.begin(), dreams.end());
-    for (int i = dreams.size() - 1; i >= 0; i--) {
-        auto dream = dreams.at(i);
-        if (dream.isGenerated) {
-            return dream;
-        }
-    }
-    return dreams.last();
-}
-
 Dream DreamManager::getDream(const QString &dreamId) const {
     return idToDreamMap.value(dreamId);
 }

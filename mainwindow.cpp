@@ -28,6 +28,9 @@
 #include "QJsonDocument"
 #include "QScrollBar"
 #include "widgets/audiorecorderwidget.h"
+#include "widgets/dreamlistwidget.h"
+#include "dreammanager.h"
+#include "locationmanager.h"
 
 
 #if defined(Q_OS_IOS)
@@ -109,6 +112,8 @@ MainWindow::MainWindow(QWidget *parent)
     themeComboBox->setStyleSheet("combobox-popup: 0;");
 #endif
 
+    connect(LocationManager::self(), &LocationManager::locationObtained, this, &MainWindow::handleLocationObtained);
+
 
     // hard code this
     apiKey = "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";
@@ -179,6 +184,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Adding layouts and widgets to the main layout
     layout->addLayout(topRowLayout);
+    layout->addWidget(DreamListWidget::self());
     layout->addStretch();
     layout->addWidget(AudioRecorderWidget::self());
 
@@ -186,8 +192,8 @@ MainWindow::MainWindow(QWidget *parent)
     margins.setTop(0);
     layout->setContentsMargins(margins);
 
+    layout->setAlignment(DreamListWidget::self(), Qt::AlignHCenter);
     layout->setAlignment(AudioRecorderWidget::self(), Qt::AlignHCenter);
-
 
     scaleBackgroundImage();
 
@@ -229,24 +235,52 @@ void MainWindow::scaleBackgroundImage() {
 void MainWindow::updateWidgets()
 {
     // call update function on widgets that depend on dream manager
+    DreamListWidget::self()->updateDreams();
 }
 
 void MainWindow::sendChat()
 {
-    auto transcriptionTextEdit = AudioRecorderWidget::self()->getTranscriptTextEdit();
-    if (transcriptionTextEdit->toPlainText() == "") return;
+//    QString message = AudioRecorderWidget::self()->getTranscriptTextEdit()->toPlainText();
+    QString message = "I had a dream last night that I was on an African safari.";
+
+    Dream dream;
+    dream.originalTranscript = message;
+    dream.recordingLength = AudioTranscriptionManager::self()->getRecordingTime();
+    dream.recordingDateTime = QDateTime::currentDateTime();
+
+    newOriginalDreamID = dream.id;
+
+    DreamManager::self()->insertDream(dream);
+
+    LocationManager::self()->requestUserLocation();
+
+    if (message == "") return;
 
     OpenAIMessage *userMessage = new OpenAIMessage("", OpenAIMessage::Role::User);
-    userMessage->setUserMessage(transcriptionTextEdit->toPlainText());
+    userMessage->setUserMessage(message);
     userMessage->addTimestamp();
 
     chatRequest->setModel("gpt-4o");
 
-    // TEMP
-    return;
-
     chatRequest->addMessage(userMessage);
     chatRequest->execute();
+}
+
+void MainWindow::handleLocationObtained(QString text)
+{
+    Dream dream = DreamManager::self()->getDream(newOriginalDreamID);
+    if (!dream.isValid()) return;
+
+    dream.recordingLocation = text;
+    DreamManager::self()->insertDream(dream);
+
+    foreach (auto childID, dream.childIDs) {
+        Dream childDream = DreamManager::self()->getDream(childID);
+        childDream.recordingLocation = text;
+        DreamManager::self()->insertDream(childDream);
+    }
+
+    updateWidgets();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -699,6 +733,11 @@ void MainWindow::touchEvent(QTouchEvent *event)
     if (event->type() == QEvent::TouchEnd) {
         currentGesture = Undefined;
     }
+}
+
+QString MainWindow::getNewOriginalDreamID() const
+{
+    return newOriginalDreamID;
 }
 
 

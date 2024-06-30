@@ -17,6 +17,8 @@ public:
 
     bool isRecording();
 
+    int getRecordingTime() const;
+
 signals:
     void transcriptionUpdated(const QString &transcription);
     void silenceDetected();
@@ -28,6 +30,7 @@ private:
 
     void updateLevel();
     QTimer updateLevelTimer;
+    int recordingTime;
 };
 
 #endif // AUDIOTRANSCRIPTIONMANAGER_H

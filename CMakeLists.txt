@@ -49,8 +49,8 @@ if (ANDROID)
     include(${android_openssl_SOURCE_DIR}/android_openssl.cmake)
 endif()
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network Multimedia Svg)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network Multimedia Svg)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network Multimedia Svg Location Positioning)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network Multimedia Svg Location Positioning)
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Force static libraries" FORCE)
 add_subdirectory(whisper.cpp)
@@ -78,6 +78,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         widgets/audiorecorderwidget.h widgets/audiorecorderwidget.cpp
         widgets/recordbutton.h widgets/recordbutton.cpp
         widgets/waveformwidget.h widgets/waveformwidget.cpp
+        widgets/dreamlistwidget.h widgets/dreamlistwidget.cpp
+        locationmanager.h locationmanager.cpp
     )
     if (ANDROID)
         add_android_openssl_libraries(DreamRecorder)
@@ -131,6 +133,8 @@ target_link_libraries(DreamRecorder PRIVATE
     Qt${QT_VERSION_MAJOR}::Network
     Qt${QT_VERSION_MAJOR}::Multimedia
     Qt${QT_VERSION_MAJOR}::Svg
+    Qt${QT_VERSION_MAJOR}::Location
+    Qt${QT_VERSION_MAJOR}::Positioning
     whisper
     ${UIKIT_LIBRARY}
     ${AVFOUNDATION_FRAMEWORK}

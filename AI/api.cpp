@@ -160,7 +160,11 @@ void API::printToolCall(const QString &name, const QJsonObject &args)
 // will maintain the original object until llm is done generating then remove it
 QString API::generateDreamData(const QJsonObject &jsonObject)
 {
-    Dream parentDream = DreamManager::self()->getNewestOriginalDream();
+    QString parentDreamID = MainWindow::self()->getNewOriginalDreamID();
+    Dream parentDream = DreamManager::self()->getDream(parentDreamID);
+    if (!parentDream.isValid()) {
+        return "Internal error, probably not your fault.";
+    }
 
     Dream childDream = Dream::forkDream(parentDream);
     childDream.updateFromJson(jsonObject);

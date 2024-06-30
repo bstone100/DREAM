@@ -63,6 +63,7 @@ void AudioTranscriptionManager::toggleStart()
 
 void AudioTranscriptionManager::start() {
     startAudioCapture();
+    recordingTime = 0;
     updateLevelTimer.start();
     AudioRecorderWidget::self()->handleRecordingStarted();
 }
@@ -81,8 +82,16 @@ bool AudioTranscriptionManager::isRecording()
 
 void AudioTranscriptionManager::updateLevel()
 {
+    if (updateLevelTimer.isActive()) {
+        recordingTime += updateLevelTimer.interval();
+    }
     float level = getCurrentLevel();
     AudioRecorderWidget::self()->getWaveformWidget()->addLevel(level);
+}
+
+int AudioTranscriptionManager::getRecordingTime() const
+{
+    return recordingTime;
 }
 
 
