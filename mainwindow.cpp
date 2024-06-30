@@ -210,14 +210,20 @@ MainWindow *MainWindow::self()
 
 void MainWindow::paintEvent(QPaintEvent *event) {
     QPainter painter(this);
-    int x = (this->width() - scaledBackground.width()) / 2;
-    int y = (this->height() - scaledBackground.height()) / 2;
-    painter.drawPixmap(x, y, scaledBackground);
+
+    // Draw the pixmap in the middle of the widget
+    qreal ratio = devicePixelRatioF();
+    painter.drawPixmap(QRect((width() - scaledBackground.width() / ratio) / 2,
+                             (height() - scaledBackground.height() / ratio) / 2,
+                             scaledBackground.width() / ratio,
+                             scaledBackground.height() / ratio), scaledBackground);
 }
 
 void MainWindow::scaleBackgroundImage() {
     QPixmap originalPixmap(":/images/galaxy.png");
-    scaledBackground = originalPixmap.scaled(this->size(), Qt::KeepAspectRatioByExpanding);
+    qreal ratio = devicePixelRatioF();
+    scaledBackground = originalPixmap.scaled(size().width() * ratio, size().height() * ratio, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+    scaledBackground.setDevicePixelRatio(ratio);
 }
 
 void MainWindow::updateWidgets()
