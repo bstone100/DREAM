@@ -3,8 +3,9 @@
 #include "QPermission"
 #include <QMessageBox>
 #include <QApplication>
-#include "../widgets/microphonewidget.h"
 #include "../mainwindow.h"
+#include "../widgets/waveformwidget.h"
+#include "../widgets/audiorecorderwidget.h"
 
 // android and others will have equivalent file
 #include "whisperinterface.h"
@@ -21,7 +22,7 @@ AudioTranscriptionManager::AudioTranscriptionManager() {
     setupAudioCapture();
 
     updateLevelTimer.setSingleShot(false);
-    updateLevelTimer.setInterval(10);
+    updateLevelTimer.setInterval(30);
 
     connect(&updateLevelTimer, &QTimer::timeout, this, &AudioTranscriptionManager::updateLevel);
 }
@@ -63,26 +64,25 @@ void AudioTranscriptionManager::toggleStart()
 void AudioTranscriptionManager::start() {
     startAudioCapture();
     updateLevelTimer.start();
-    MicrophoneWidget::self()->expand();
+    AudioRecorderWidget::self()->handleRecordingStarted();
 }
 
 void AudioTranscriptionManager::stop() {
     MainWindow::self()->sendChat();
-    MicrophoneWidget::self()->collapse();
+    AudioRecorderWidget::self()->handleRecordingFinished();
     updateLevelTimer.stop();
-    MicrophoneWidget::self()->setLevel(0.0);
     stopAudioCapture();
 }
 
 bool AudioTranscriptionManager::isRecording()
 {
-    return updateLevelTimer.isActive();
+    return isCapturing();
 }
 
 void AudioTranscriptionManager::updateLevel()
 {
     float level = getCurrentLevel();
-    MicrophoneWidget::self()->setLevel(level);
+    AudioRecorderWidget::self()->getWaveformWidget()->addLevel(level);
 }
 
 

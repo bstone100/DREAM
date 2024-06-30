@@ -5,6 +5,7 @@
 #include "audiotranscriptionmanager.h"
 #include "../mainwindow.h"
 #include "QElapsedTimer"
+#include "../widgets/audiorecorderwidget.h"
 
 #import <AVFoundation/AVFoundation.h>
 #import <AudioToolbox/AudioQueue.h>
@@ -198,6 +199,10 @@ void clearAudioBuffers() {
     NSLog(@"Buffers cleared");
 }
 
+bool isCapturing() {
+    return stateInp.isCapturing;
+}
+
 float getCurrentLevel() {
     if (!stateInp.isCapturing) {
         return 0.0;
@@ -258,9 +263,9 @@ void onTranscribe() {
         // get maximum number of threads on this device (max 8)
         const int max_threads = MIN(8, (int)[[NSProcessInfo processInfo] processorCount]);
 
-        params.print_realtime   = true;
+        params.print_realtime   = false;
         params.print_progress   = false;
-        params.print_timestamps = true;
+        params.print_timestamps = false;
         params.print_special    = false;
         params.translate        = false;
 //        params.language         = "en";
@@ -282,7 +287,7 @@ void onTranscribe() {
             return;
         }
 
-        whisper_print_timings(stateInp.ctx);
+//        whisper_print_timings(stateInp.ctx);
 
         auto endTime = clock();
 
@@ -372,7 +377,7 @@ void AudioInputCallback(void * inUserData,
 
     // Check if the user stopped talking
     // if so then clear the buffers but keep recording
-    bool speechDetected = stateInp->isSpeechStarted || MainWindow::self()->getCurrentTranscriptionWordCount() > 1;
+    bool speechDetected = stateInp->isSpeechStarted || AudioRecorderWidget::self()->getCurrentTranscriptionWordCount() > 1;
     if (stateInp->currentSilenceDuration >= stateInp->silenceTimeOut && speechDetected) {
         NSLog(@"Silence detected.");
 

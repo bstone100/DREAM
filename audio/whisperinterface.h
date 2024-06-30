@@ -7,6 +7,7 @@ void registerSilenceDetectedSignal(void (*func)(void));
 void registerLevelCalculatedSignal(void (*func)(const float));
 void registerTimeLimitReachedSignal(void (*func)(void));
 
+bool isCapturing();
 float getCurrentLevel();
 void setupAudioCapture();
 void startAudioCapture();

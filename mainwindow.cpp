@@ -27,6 +27,7 @@
 #include "QLabel"
 #include "QJsonDocument"
 #include "QScrollBar"
+#include "widgets/audiorecorderwidget.h"
 
 
 #if defined(Q_OS_IOS)
@@ -82,19 +83,6 @@ MainWindow::MainWindow(QWidget *parent)
     setCentralWidget(centralWidget);
 
     layout = new QVBoxLayout(centralWidget);
-
-    transcriptionTextEdit = new ResizingTextEdit(this);
-    transcriptionTextEdit->setAcceptRichText(false);
-    transcriptionTextEdit->setReadOnly(true);
-    transcriptionTextEdit->setTextInteractionFlags(Qt::NoTextInteraction);
-    transcriptionTextEdit->setMinHeight(60);
-    transcriptionTextEdit->setMaxHeight(200);
-
-
-    connect(MicrophoneWidget::self(), &MicrophoneWidget::clicked, AudioTranscriptionManager::self(), &AudioTranscriptionManager::toggleStart);
-    connect(AudioTranscriptionManager::self(), &AudioTranscriptionManager::transcriptionUpdated, this, &MainWindow::updateTranscriptionText);
-    connect(AudioTranscriptionManager::self(), &AudioTranscriptionManager::silenceDetected, this, &MainWindow::handleSilenceDetected);
-    connect(AudioTranscriptionManager::self(), &AudioTranscriptionManager::timeLimitReached, this, &MainWindow::handleAudioTimeLimit);
 
 
     themeComboBox = new ResizingComboBox(SidePanel::self());
@@ -192,13 +180,16 @@ MainWindow::MainWindow(QWidget *parent)
     // Adding layouts and widgets to the main layout
     layout->addLayout(topRowLayout);
     layout->addStretch();
-    layout->addWidget(MicrophoneWidget::self());
-    layout->addWidget(transcriptionTextEdit);
+    layout->addWidget(AudioRecorderWidget::self());
 
     auto margins = layout->contentsMargins();
     margins.setTop(0);
     layout->setContentsMargins(margins);
-    layout->setAlignment(MicrophoneWidget::self(), Qt::AlignHCenter);
+
+    layout->setAlignment(AudioRecorderWidget::self(), Qt::AlignHCenter);
+
+
+    scaleBackgroundImage();
 
     loadSettings();
 }
@@ -217,6 +208,18 @@ MainWindow *MainWindow::self()
     return singleton;
 }
 
+void MainWindow::paintEvent(QPaintEvent *event) {
+    QPainter painter(this);
+    int x = (this->width() - scaledBackground.width()) / 2;
+    int y = (this->height() - scaledBackground.height()) / 2;
+    painter.drawPixmap(x, y, scaledBackground);
+}
+
+void MainWindow::scaleBackgroundImage() {
+    QPixmap originalPixmap(":/images/galaxy.png");
+    scaledBackground = originalPixmap.scaled(this->size(), Qt::KeepAspectRatioByExpanding);
+}
+
 void MainWindow::updateWidgets()
 {
     // call update function on widgets that depend on dream manager
@@ -224,21 +227,12 @@ void MainWindow::updateWidgets()
 
 void MainWindow::sendChat()
 {
+    auto transcriptionTextEdit = AudioRecorderWidget::self()->getTranscriptTextEdit();
     if (transcriptionTextEdit->toPlainText() == "") return;
 
     OpenAIMessage *userMessage = new OpenAIMessage("", OpenAIMessage::Role::User);
     userMessage->setUserMessage(transcriptionTextEdit->toPlainText());
     userMessage->addTimestamp();
-
-    transcriptionBeginning.clear();
-    transcriptionCurrent.clear();
-
-    // fade out label and clear it once faded
-    auto anim = fadeOutWidget(transcriptionTextEdit, 500);
-    connect(anim, &QPropertyAnimation::finished, this, [&]{
-        transcriptionTextEdit->clear();
-        fadeInWidget(transcriptionTextEdit, 0);
-    });
 
     chatRequest->setModel("gpt-4o");
 
@@ -456,8 +450,8 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
     SidePanel::self()->updateSize();
-
-    return QMainWindow::resizeEvent(event);
+    QMainWindow::resizeEvent(event);
+    scaleBackgroundImage();
 }
 
 
@@ -527,18 +521,22 @@ QPropertyAnimation *MainWindow::fadeOutWidget(QWidget* widget, int duration) {
     return animation;
 }
 
-void MainWindow::fadeInWidgets(QList<QWidget *> widgets, int duration)
+QPropertyAnimation *MainWindow::fadeInWidgets(QList<QWidget *> widgets, int duration)
 {
+    QPropertyAnimation *anim = NULL;
     foreach (auto widget, widgets) {
-        fadeInWidget(widget, duration);
+        anim = fadeInWidget(widget, duration);
     }
+    return anim;
 }
 
-void MainWindow::fadeOutWidgets(QList<QWidget *> widgets, int duration)
+QPropertyAnimation *MainWindow::fadeOutWidgets(QList<QWidget *> widgets, int duration)
 {
+    QPropertyAnimation *anim = NULL;
     foreach (auto widget, widgets) {
-        fadeOutWidget(widget, duration);
+        anim = fadeOutWidget(widget, duration);
     }
+    return anim;
 }
 
 void MainWindow::setWidgetOpacity(QWidget *widget, double opacity)
@@ -561,6 +559,90 @@ double MainWindow::interpolate(double startVal, double endVal, double progress)
 {
     progress = qBound(0.0, progress, 1.0);
     return startVal * (1 - progress) + endVal * progress;
+}
+
+void MainWindow::smartSetVisible(QList<QWidget *> widgets, bool visible, int duration, QEasingCurve::Type curveType)
+{
+    QHash<QWidget *, QList<QWidget *>> parentMap;
+
+    // Group widgets by their parents
+    foreach (QWidget *widget, widgets) {
+        if (widget && widget->parentWidget()) {
+            parentMap[widget->parentWidget()].append(widget);
+        }
+    }
+
+    if (parentMap.isEmpty()) return;
+
+    if (parentMap.size() > 1) {
+        foreach (QList<QWidget *> commonParentList, parentMap) {
+            smartSetVisible(commonParentList, visible, duration, curveType);
+        }
+        return;
+    }
+
+    // at this point all widgets have common parent
+
+    // cull widgets whose visibility is already equal to visible
+    for (int i = widgets.size() - 1; i >= 0; i--) {
+        auto widget = widgets.at(i);
+        if (!widget || widget->isVisible() == visible) {
+            widgets.removeAt(i);
+        }
+    }
+
+    if (widgets.isEmpty()) return;
+
+    QWidget *parentWidget = widgets.first()->parentWidget();
+    if (!parentWidget) return;
+
+    QLayout *layout = parentWidget->layout();
+    if (!layout) return;
+
+    bool isVert = qobject_cast<QVBoxLayout *>(layout);
+    bool isHoriz = qobject_cast<QHBoxLayout *>(layout);
+
+    if (!isVert && !isHoriz) return;
+
+    // now it's safe to animate parent
+
+    // save parent geom
+    QRect startRect = parentWidget->geometry();
+    QRect endRect = startRect;
+    QSize oldSize = parentWidget->size();
+
+    // hide or show children
+    foreach (auto widget, widgets) {
+        widget->setVisible(visible);
+    }
+
+    // get target size
+    QSize newSize = layout->sizeHint();
+
+    // If there's no size change, skip animation
+    if (newSize == oldSize) return;
+
+
+    if (isVert) {
+        // anchor to bottom
+        // modify y and height
+        int delta = oldSize.height() - newSize.height();
+        endRect.setTop(endRect.top() + delta);
+    } else {
+        // anchor to middle
+        // modify x and width
+        int delta = oldSize.width() - newSize.width();
+        endRect.setLeft(endRect.left() + delta / 2);
+
+        endRect.setWidth(newSize.width());
+    }
+
+    QPropertyAnimation *animation = new QPropertyAnimation(parentWidget, "geometry");
+    animation->setDuration(duration);
+    animation->setEasingCurve(curveType);
+    animation->setStartValue(startRect);
+    animation->setEndValue(endRect);
+    animation->start(QAbstractAnimation::DeleteWhenStopped);
 }
 
 
@@ -611,74 +693,6 @@ void MainWindow::touchEvent(QTouchEvent *event)
     if (event->type() == QEvent::TouchEnd) {
         currentGesture = Undefined;
     }
-}
-
-// called repeatedly during recording
-// every time whisper model finishes
-void MainWindow::updateTranscriptionText(QString text)
-{
-    text = text.trimmed();
-    if (text == "you" || text == "." || text == "You" || text == "♪♪") {
-        text.clear(); // avoid showing common hallucinations of silence
-    }
-
-    if (!text.isEmpty()) {
-        text[0] = text[0].toUpper();
-    }
-
-    if (transcriptionCurrent == text) {
-        return;
-    }
-    transcriptionCurrent = text;
-
-    // Save the current scroll position and determine if we are at the bottom
-    QScrollBar *scrollBar = transcriptionTextEdit->verticalScrollBar();
-    bool isAtBottom = (scrollBar->value() == scrollBar->maximum());
-    int scrollPos = scrollBar->value();
-
-    transcriptionTextEdit->setText(transcriptionBeginning + transcriptionCurrent);
-
-    // Restore the scroll position or scroll to the bottom if we were at the bottom
-    if (isAtBottom) {
-        scrollBar->setValue(scrollBar->maximum());
-    } else {
-        scrollBar->setValue(scrollPos);
-    }
-}
-
-void MainWindow::handleSilenceDetected()
-{
-    transcriptionBeginning += transcriptionCurrent;
-    transcriptionCurrent.clear();
-
-    transcriptionBeginning = transcriptionBeginning.trimmed();
-
-    QChar lastChar = transcriptionBeginning[transcriptionBeginning.length() - 1];
-    lastChar.isPunct() ? transcriptionBeginning += " " : transcriptionBeginning += ". ";
-}
-
-// for now just stop recording
-void MainWindow::handleAudioTimeLimit()
-{
-    MicrophoneWidget::self()->click();
-//    transcriptionBeginning += transcriptionCurrent;
-//    transcriptionCurrent.clear();
-
-//    QChar lastChar = transcriptionBeginning[transcriptionBeginning.length() - 1];
-
-//    // Check if the last character is not a typical sentence ending punctuation
-//    if (lastChar != '.' && lastChar != '?' && lastChar != '!')
-//    {
-//        transcriptionBeginning += ". "; // Append a period and a space if there's no ending punctuation
-//    }
-}
-
-int MainWindow::getCurrentTranscriptionWordCount()
-{
-    // Split the text by any sequence of non-word characters
-    static QRegularExpression regex("\\W+");
-    QStringList words = transcriptionTextEdit->toPlainText().split(regex, Qt::SkipEmptyParts);
-    return words.count();
 }
 
 

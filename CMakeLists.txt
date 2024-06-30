@@ -75,6 +75,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         libraries/easing.h libraries/easing.cpp
         dream.h dream.cpp
         dreammanager.h dreammanager.cpp
+        widgets/audiorecorderwidget.h widgets/audiorecorderwidget.cpp
+        widgets/recordbutton.h widgets/recordbutton.cpp
+        widgets/waveformwidget.h widgets/waveformwidget.cpp
     )
     if (ANDROID)
         add_android_openssl_libraries(DreamRecorder)

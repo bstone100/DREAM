@@ -17,6 +17,8 @@ public:
     int getMinHeight() const;
     void setMinHeight(int newMinHeight);
 
+    void setTextBetter(const QString &text);
+
 protected:
     bool event(QEvent *e) override;
 

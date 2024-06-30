@@ -56,20 +56,19 @@ public:
     void dumpJsonToFile(QJsonObject &jObj, QString fileName);
     QPropertyAnimation *fadeInWidget(QWidget *widget, int duration);
     QPropertyAnimation *fadeOutWidget(QWidget *widget, int duration);
-    void fadeInWidgets(QList<QWidget *> widgets, int duration);
-    void fadeOutWidgets(QList<QWidget *> widgets, int duration);
+    QPropertyAnimation *fadeInWidgets(QList<QWidget *> widgets, int duration);
+    QPropertyAnimation *fadeOutWidgets(QList<QWidget *> widgets, int duration);
     void setWidgetOpacity(QWidget *widget, double opacity);
     double getWidgetOpacity(QWidget *widget);
     static double interpolate(double startVal, double endVal, double progress);
-
-    int getCurrentTranscriptionWordCount();
-
+    static void smartSetVisible(QList<QWidget *> widgets, bool visible, int duration = 500, QEasingCurve::Type curveType = QEasingCurve::Linear);
 
 protected:
     void closeEvent(QCloseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
     bool eventFilter(QObject *obj, QEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
+    void paintEvent(QPaintEvent *event) override;
 
 private:
     static MainWindow *singleton;
@@ -83,6 +82,9 @@ private:
 
     QWidget *centralWidget;
     QVBoxLayout *layout;
+
+    QPixmap scaledBackground;
+    void scaleBackgroundImage();
 
     ResizingComboBox *themeComboBox;
 
@@ -102,16 +104,6 @@ private:
     };
 
     Gesture currentGesture = Undefined;
-
-    // audio
-    ResizingTextEdit *transcriptionTextEdit;
-
-    void updateTranscriptionText(QString text);
-    void handleSilenceDetected();
-    void handleAudioTimeLimit();
-
-    QString transcriptionBeginning;
-    QString transcriptionCurrent;
 
 };
 
