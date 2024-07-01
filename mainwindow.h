@@ -70,7 +70,6 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
     bool eventFilter(QObject *obj, QEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
-    void paintEvent(QPaintEvent *event) override;
 
 private:
     static MainWindow *singleton;
@@ -84,9 +83,6 @@ private:
 
     QWidget *centralWidget;
     QVBoxLayout *layout;
-
-    QPixmap scaledBackground;
-    void scaleBackgroundImage();
 
     ResizingComboBox *themeComboBox;
 

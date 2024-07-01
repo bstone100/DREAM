@@ -1,6 +1,7 @@
 #ifndef AUDIORECORDERWIDGET_H
 #define AUDIORECORDERWIDGET_H
 
+#include "QtWidgets/qgroupbox.h"
 #include <QWidget>
 #include <QPushButton>
 #include <QTextEdit>
@@ -11,7 +12,7 @@ class ResizingTextEdit;
 class RecordButton;
 class WaveformWidget;
 
-class AudioRecorderWidget : public QWidget
+class AudioRecorderWidget : public QGroupBox
 {
     Q_OBJECT
 

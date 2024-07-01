@@ -11,15 +11,13 @@
 AudioRecorderWidget* AudioRecorderWidget::singleton = nullptr;
 
 AudioRecorderWidget::AudioRecorderWidget(QWidget *parent)
-    : QWidget(parent)
+    : QGroupBox(parent)
 {
     // Set widget background and shape
-    setStyleSheet("background-color: #142539; border-radius: 10px;");
-    setAttribute(Qt::WA_StyledBackground);
+//    setStyleSheet("background-color: #142539; border-radius: 10px;");
+//    setAttribute(Qt::WA_StyledBackground);
 
-    setFixedWidth(300);
-
-//    setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Ignored);
+//    setFixedWidth(300);
 
     // Initialize components
     recordButton = new RecordButton(this);
@@ -47,7 +45,14 @@ AudioRecorderWidget::AudioRecorderWidget(QWidget *parent)
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->addWidget(waveformWidget);
     layout->addWidget(transcriptTextEdit);
+
+//    auto hLayout = new QHBoxLayout;
+////    hLayout->addStretch();
+//    QSpacerItem *s1 = new QSpacerItem();
+//    hLayout->addWidget(recordButton);
+//    hLayout->addStretch();
     layout->addWidget(recordButton);
+//    layout->addLayout(hLayout);
 
     layout->setAlignment(waveformWidget, Qt::AlignHCenter);
     layout->setAlignment(transcriptTextEdit, Qt::AlignHCenter);

@@ -33,6 +33,7 @@ QJsonObject Dream::toJson() const {
     return QJsonObject{
         {"id", id},
         {"parentID", parentID},
+        {"childIDs", QJsonArray::fromStringList(childIDs)},
         {"originalTranscript", originalTranscript},
         {"recordingDateTime", recordingDateTime.toString("yyyy-MM-dd HH:mm")},
         {"recordingLocation", recordingLocation},
@@ -50,6 +51,15 @@ QJsonObject Dream::toJson() const {
 
 void Dream::updateFromJson(const QJsonObject &obj)
 {
+    if (obj.contains("id")) {
+        id = obj["id"].toString();
+    }
+    if (obj.contains("parentID")) {
+        parentID = obj["parentID"].toString();
+    }
+    if (obj.contains("childIDs")) {
+        childIDs = QList<QString>::fromList(obj["childIDs"].toVariant().toStringList());
+    }
     if (obj.contains("originalTranscript")) {
         originalTranscript = obj["originalTranscript"].toString();
     }
@@ -78,7 +88,7 @@ void Dream::updateFromJson(const QJsonObject &obj)
         isLucid = obj["isLucid"].toBool();
     }
     if (obj.contains("similarDreams")) {
-        similarDreams = QVector<QString>::fromList(obj["similarDreams"].toVariant().toStringList());
+        similarDreams = QList<QString>::fromList(obj["similarDreams"].toVariant().toStringList());
     }
     if (obj.contains("isGenerated")) {
         isGenerated = obj["isGenerated"].toBool();

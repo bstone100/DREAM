@@ -14,6 +14,7 @@ public:
     static DreamManager *self();
 
     void insertDream(const Dream &dream);
+    void insertDreams(const QList<Dream> &dreams);
 
     void removeDream(const Dream &dream);
     void removeDream(const QString &dreamId);
@@ -24,20 +25,17 @@ public:
     bool containsDream(const QString &dreamId) const;
     void clearDreams();
 
+    QJsonArray dreamListToJsonArray(QList<Dream> dreams, QList<QString> keys = {});
+    QList<Dream> jsonArrayToDreamList(const QJsonArray &jsonArray);
+
     QJsonObject getJsonObject();
     void loadJsonObject(const QJsonObject &jObj);
 
-    QJsonArray getAllDreamsJson();
-    QJsonArray getDreamsForDateJson(const QDate &date);
-    QJsonArray getDreamsForDateRangeJson(const QDate &startDate, const QDate &endDate);
-
-    void saveSettings();
-    void loadSettings();
+    QList<Dream> getDreamsForDateRange(const QDate &startDate, const QDate &endDate);
+    void jsonArrayRemoveIf(QJsonArray &jsonArray, QString key, QVariant value);
 
 private:
     QMap<QString, Dream> idToDreamMap;
-
-    QJsonArray dreamListToJson(QList<Dream> dreams);
 
     static DreamManager *singleton;
 

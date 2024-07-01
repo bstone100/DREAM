@@ -23,6 +23,8 @@ signals:
 
 private:
     bool isPressed;
+
+    int size;
 };
 
 #endif // RECORDBUTTON_H

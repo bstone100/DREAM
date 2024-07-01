@@ -177,17 +177,14 @@ QString API::generateDreamData(const QJsonObject &jsonObject)
 
 // only show certain information
 // must alredy be generated
-
-//    {"id", id},
-//    {"title", title},
-//    {"isNightmare", isNightmare},
-//    {"isLucid", isLucid},
 QString API::getDreamsInRange(const QJsonObject &jsonObject)
 {
     QDate startDate = QDate::fromString(jsonObject["startDate"].toString(), "yyyy-MM-dd");
     QDate endDate = QDate::fromString(jsonObject["endDate"].toString(), "yyyy-MM-dd");
 
-    QJsonArray dreamArray = DreamManager::self()->getDreamsForDateRangeJson(startDate, endDate);
+    QList<Dream> dreams = DreamManager::self()->getDreamsForDateRange(startDate, endDate);
+    QJsonArray dreamArray = DreamManager::self()->dreamListToJsonArray(dreams, {"id", "title", "isNightmare", "isLucid"});
+    DreamManager::self()->jsonArrayRemoveIf(dreamArray, "isGenerated", false);
 
     QJsonDocument doc(dreamArray);
     return doc.toJson(QJsonDocument::Compact);

@@ -26,7 +26,6 @@ signals:
 
 private:
     static AudioTranscriptionManager *singleton;
-    void init();
 
     void updateLevel();
     QTimer updateLevelTimer;

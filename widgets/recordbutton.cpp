@@ -4,7 +4,7 @@
 RecordButton::RecordButton(QWidget *parent)
     : QWidget(parent)
 {
-
+    size = 50;
 }
 
 void RecordButton::paintEvent(QPaintEvent *event) {
@@ -15,7 +15,7 @@ void RecordButton::paintEvent(QPaintEvent *event) {
     // paint outer white circle
     painter.setPen(QPen(Qt::white, 2));
     painter.setBrush(Qt::transparent);
-    painter.drawEllipse(1, 1, width() - 2, height() - 2);
+    painter.drawEllipse(1, 1, size - 2, size - 2);
 
     // paint inner red shape
     painter.setPen(QPen(Qt::transparent, 2));
@@ -26,14 +26,14 @@ void RecordButton::paintEvent(QPaintEvent *event) {
     if (isRecording) {
         // Draw smaller red square
         int padding = 14;
-        QRect rect(padding, padding, width() - 2 * padding, height() - 2 * padding);
+        QRect rect(padding, padding, size - 2 * padding, size - 2 * padding);
 
         int cornerRadius = 2;
         painter.drawRoundedRect(rect, cornerRadius, cornerRadius);
     } else {
         // Draw red circle
         int padding = 4;
-        QRect rect(padding, padding, width() - 2 * padding, height() - 2 * padding);
+        QRect rect(padding, padding, size - 2 * padding, size - 2 * padding);
 
         painter.drawEllipse(rect);
     }

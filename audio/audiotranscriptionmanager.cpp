@@ -16,9 +16,6 @@ AudioTranscriptionManager::AudioTranscriptionManager() {
     if (!singleton) {
         singleton = this;
     }
-
-    init();
-
     setupAudioCapture();
 
     updateLevelTimer.setSingleShot(false);
@@ -35,23 +32,6 @@ AudioTranscriptionManager *AudioTranscriptionManager::self()
     return singleton;
 }
 
-void AudioTranscriptionManager::init()
-{
-#if QT_CONFIG(permissions)
-    QMicrophonePermission microphonePermission;
-    switch (qApp->checkPermission(microphonePermission)) {
-    case Qt::PermissionStatus::Undetermined:
-        qApp->requestPermission(microphonePermission, this, &AudioTranscriptionManager::init);
-        return;
-    case Qt::PermissionStatus::Denied:
-        QMessageBox::warning(NULL, "Permission Error", "Microphone permission is not granted!");
-        return;
-    case Qt::PermissionStatus::Granted:
-        break;
-    }
-#endif
-}
-
 void AudioTranscriptionManager::toggleStart()
 {
     if (!updateLevelTimer.isActive()) {
@@ -62,6 +42,20 @@ void AudioTranscriptionManager::toggleStart()
 }
 
 void AudioTranscriptionManager::start() {
+#if QT_CONFIG(permissions)
+    QMicrophonePermission microphonePermission;
+    switch (qApp->checkPermission(microphonePermission)) {
+    case Qt::PermissionStatus::Undetermined:
+        qApp->requestPermission(microphonePermission, this, &AudioTranscriptionManager::start);
+        return;
+    case Qt::PermissionStatus::Denied:
+        QMessageBox::warning(NULL, "Permission Error", "Microphone permission is not granted!");
+        return;
+    case Qt::PermissionStatus::Granted:
+        break;
+    }
+#endif
+
     startAudioCapture();
     recordingTime = 0;
     updateLevelTimer.start();

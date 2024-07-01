@@ -48,7 +48,7 @@ QString MainWindow::currentPath;
 QColor MainWindow::lightColor = 0xE9E9EB;
 QColor MainWindow::lightMidColor = 0x2a284c;
 QColor MainWindow::darkMidColor = 0x220f30;
-QColor MainWindow::darkColor = 0x081f30;
+QColor MainWindow::darkColor = 0x423c56;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -127,7 +127,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     systemPrompt["prompt"] = "You are part of an app called Dream Recorder. The app lets the user transcribe a description of the dreams they had last night. "
                              "Your job is to parse the user's dreams and make the correct tool calls."
-                             "Only use tools that you have been given access to.";
+                             "Only use tools that you have been given access to."
+                             "If the user didn't describe any dreams then don't respond at all, just leave your response blank.";
 
     chatRequest->addMessage(new OpenAIMessage(systemPrompt, OpenAIMessage::System));
 
@@ -195,7 +196,6 @@ MainWindow::MainWindow(QWidget *parent)
     layout->setAlignment(DreamListWidget::self(), Qt::AlignHCenter);
     layout->setAlignment(AudioRecorderWidget::self(), Qt::AlignHCenter);
 
-    scaleBackgroundImage();
 
     loadSettings();
 }
@@ -214,24 +214,6 @@ MainWindow *MainWindow::self()
     return singleton;
 }
 
-void MainWindow::paintEvent(QPaintEvent *event) {
-    QPainter painter(this);
-
-    // Draw the pixmap in the middle of the widget
-    qreal ratio = devicePixelRatioF();
-    painter.drawPixmap(QRect((width() - scaledBackground.width() / ratio) / 2,
-                             (height() - scaledBackground.height() / ratio) / 2,
-                             scaledBackground.width() / ratio,
-                             scaledBackground.height() / ratio), scaledBackground);
-}
-
-void MainWindow::scaleBackgroundImage() {
-    QPixmap originalPixmap(":/images/galaxy.png");
-    qreal ratio = devicePixelRatioF();
-    scaledBackground = originalPixmap.scaled(size().width() * ratio, size().height() * ratio, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
-    scaledBackground.setDevicePixelRatio(ratio);
-}
-
 void MainWindow::updateWidgets()
 {
     // call update function on widgets that depend on dream manager
@@ -240,8 +222,7 @@ void MainWindow::updateWidgets()
 
 void MainWindow::sendChat()
 {
-//    QString message = AudioRecorderWidget::self()->getTranscriptTextEdit()->toPlainText();
-    QString message = "I had a dream last night that I was on an African safari.";
+    QString message = AudioRecorderWidget::self()->getTranscriptTextEdit()->toPlainText();
 
     Dream dream;
     dream.originalTranscript = message;
@@ -251,7 +232,7 @@ void MainWindow::sendChat()
     newOriginalDreamID = dream.id;
 
     DreamManager::self()->insertDream(dream);
-
+    updateWidgets();
     LocationManager::self()->requestUserLocation();
 
     if (message == "") return;
@@ -380,6 +361,8 @@ void MainWindow::saveSettings()
 
     settings->setValue("onboarded", onboarded);
 
+    settings->setValue("dreamManager", DreamManager::self()->getJsonObject());
+
     settings->setValue("mainWindow/geometry", saveGeometry());
     settings->setValue("mainWindow/windowState", saveState());
 }
@@ -410,6 +393,9 @@ void MainWindow::loadSettings()
     onboarded = settings->value("onboarded", false).toBool();
     // do something here if user hasn't been onboarded
     onboarded = true;
+
+    DreamManager::self()->loadJsonObject(settings->value("dreamManager").toJsonObject());
+    updateWidgets();
 
     restoreGeometry(settings->value("mainWindow/geometry").toByteArray());
     restoreState(settings->value("mainWindow/windowState").toByteArray());
@@ -491,7 +477,6 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 {
     SidePanel::self()->updateSize();
     QMainWindow::resizeEvent(event);
-    scaleBackgroundImage();
 }
 
 
