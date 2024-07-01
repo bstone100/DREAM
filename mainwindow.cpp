@@ -31,6 +31,7 @@
 #include "widgets/dreamlistwidget.h"
 #include "dreammanager.h"
 #include "locationmanager.h"
+#include "widgets/moonwidget.h"
 
 
 #if defined(Q_OS_IOS)
@@ -45,10 +46,13 @@ MainWindow *MainWindow::singleton = NULL;
 QString MainWindow::version = PROJECT_VERSION;
 QString MainWindow::currentPath;
 
-QColor MainWindow::lightColor = 0xE9E9EB;
+QColor MainWindow::lightColor = 0xfdf1c8;
 QColor MainWindow::lightMidColor = 0x2a284c;
 QColor MainWindow::darkMidColor = 0x220f30;
 QColor MainWindow::darkColor = 0x423c56;
+QColor MainWindow::sidePanelColorDark = 0x100e29;
+QColor MainWindow::sidePanelColorLight = 0xA6A8AF;
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -183,9 +187,24 @@ MainWindow::MainWindow(QWidget *parent)
     topRowLayout->addStretch();
     topRowLayout->setContentsMargins(0,0,0,0);
 
+    QLabel *pageTitle = new QLabel("All Dreams"); // maybe change this when list filters are added
+    pageTitle->setAlignment(Qt::AlignLeft);
+    pageTitle->setStyleSheet("QLabel{font-size: 30px;}");
+
+    moonWidget = new MoonWidget(this);
+    moonWidget->setFixedSize(80,80);
+    moonWidget->resizeImage();
+
+    auto secondRowLayout = new QHBoxLayout;
+//    secondRowLayout->addWidget(pageTitle, 0, Qt::AlignLeft | Qt::AlignHCenter);
+    secondRowLayout->addStretch();
+    secondRowLayout->addWidget(moonWidget, 0, Qt::AlignRight | Qt::AlignHCenter);
+    secondRowLayout->setContentsMargins(14,0,0,0);
+
     // Adding layouts and widgets to the main layout
     layout->addLayout(topRowLayout);
-    layout->addWidget(DreamListWidget::self());
+    layout->addLayout(secondRowLayout);
+    layout->addWidget(DreamListWidget::self(), 1);
     layout->addStretch();
     layout->addWidget(AudioRecorderWidget::self());
 
@@ -195,7 +214,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     layout->setAlignment(DreamListWidget::self(), Qt::AlignHCenter);
     layout->setAlignment(AudioRecorderWidget::self(), Qt::AlignHCenter);
-
 
     loadSettings();
 }
@@ -228,6 +246,9 @@ void MainWindow::sendChat()
     dream.originalTranscript = message;
     dream.recordingLength = AudioTranscriptionManager::self()->getRecordingTime();
     dream.recordingDateTime = QDateTime::currentDateTime();
+    QLocale locale = QLocale::system(); // Get the system locale
+    QString dayName = locale.dayName(dream.recordingDateTime.date().dayOfWeek(), QLocale::LongFormat);
+    dream.title = QString("%1's Dream").arg(dayName);
 
     newOriginalDreamID = dream.id;
 
@@ -313,28 +334,26 @@ void MainWindow::setDarkMode(bool isDarkMode)
 
         // this lets us use just one stylesheet and change its colors at runtime
         if (isDarkMode) {
-            static QColor sidePanelColorDark = 0x021527;
             static QColor menuBorderColorDark = 0x7A71E7;
             static QColor menuItemSelectedColorDark = 0x5A4EA6;
             static QColor menuItemDisabledColorDark = 0xA095C7;
 
             styleSheet.replace("@backgroundColor", darkColor.name());
             styleSheet.replace("@foregroundColor", lightColor.name());
-
             styleSheet.replace("@sidePanelColor", sidePanelColorDark.name());
+
             styleSheet.replace("@menuBorderColor", menuBorderColorDark.name());
             styleSheet.replace("@menuItemSelectedColor", menuItemSelectedColorDark.name());
             styleSheet.replace("@menuItemDisabledColor", menuItemDisabledColorDark.name());
         } else {
-            static QColor sidePanelColorLight = 0xA6A8AF;
             static QColor menuBorderColorLight = 0x5A4EA6;
             static QColor menuItemSelectedColorLight = 0x7A71E7;
             static QColor menuItemDisabledColorLight = 0xB3A6C9;
 
             styleSheet.replace("@backgroundColor", lightColor.name());
             styleSheet.replace("@foregroundColor", darkColor.name());
-
             styleSheet.replace("@sidePanelColor", sidePanelColorLight.name());
+
             styleSheet.replace("@menuBorderColor", menuBorderColorLight.name());
             styleSheet.replace("@menuItemSelectedColor", menuItemSelectedColorLight.name());
             styleSheet.replace("@menuItemDisabledColor", menuItemDisabledColorLight.name());
@@ -362,6 +381,7 @@ void MainWindow::saveSettings()
     settings->setValue("onboarded", onboarded);
 
     settings->setValue("dreamManager", DreamManager::self()->getJsonObject());
+    dumpJsonToFile(DreamManager::self()->getJsonObject(), "dreamManager.json");
 
     settings->setValue("mainWindow/geometry", saveGeometry());
     settings->setValue("mainWindow/windowState", saveState());
@@ -475,12 +495,13 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
-    SidePanel::self()->updateSize();
     QMainWindow::resizeEvent(event);
+    SidePanel::self()->updateSize();
+    DreamListWidget::self()->updateSize();
 }
 
 
-void MainWindow::dumpJsonToFile(QJsonObject &jObj, QString fileName)
+void MainWindow::dumpJsonToFile(QJsonObject jObj, QString fileName)
 {
     // Convert the QJsonObject to QJsonDocument
     QJsonDocument jsonDoc(jObj);

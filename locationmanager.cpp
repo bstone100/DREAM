@@ -83,7 +83,7 @@ void LocationManager::reverseGeocodeFinished()
     if (reply->error() == QGeoCodeReply::NoError) {
         auto locations = reply->locations();
         if (!locations.isEmpty()) {
-            emit locationObtained(locations.first().address().text());
+            emit locationObtained(locations.first().address().city());
         }
     }
     reply->deleteLater();

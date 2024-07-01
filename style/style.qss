@@ -9,25 +9,6 @@ QMainWindow {
     background-color: @backgroundColor;
 }
 
-/* QPushButton (Light Mode) */
-QAbstractButton {
-    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 @menuItemSelectedColor, stop:1 @menuBorderColor); /* Gradient for regular state */
-    border: 2px solid @menuBorderColor; /* Border color for regular state */
-    border-radius: 5px;
-    padding: 8px 16px;
-    color: white; /* Text color for regular state */
-}
-
-QAbstractButton:hover {
-    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 @menuBorderColor, stop:1 @menuItemSelectedColor); /* Gradient for hover state */
-}
-
-QAbstractButton:pressed {
-    background-color: @foregroundColor; /* Background color for pressed state */
-    border: 2px solid @menuItemSelectedColor; /* Border color for pressed state */
-    color: white; /* Text color for pressed state */
-}
-
 QGroupBox {
     background-color: @backgroundColor;
     border: none;
@@ -100,6 +81,60 @@ QScrollArea {
     background: transparent;
     border: none;
 }
+
+DreamListWidget {
+    background-color: transparent;
+    border: none;
+    border-top: 1px solid #645D6B;
+}
+
+QListView::item {
+    background: transparent;
+    padding: 0px;
+    margin: 0px;
+}
+
+QListView::item:selected {
+    background: transparent;
+}
+
+QListView::item:selected:!active {
+    background: transparent;
+}
+
+DreamListWidgetItem {
+    background: transparent;
+    border: 0px;
+    border-bottom: 1px solid #645D6B;
+    padding: 15px;
+}
+
+DreamListWidgetItem:pressed {
+    background: #645D6B;
+}
+
+DreamListWidgetItem QLabel#titleLabel {
+    font-size: 13px; /* Larger font size for the title */
+    font-weight: bold; /* Bold font for the title */
+}
+
+DreamListWidgetItem QLabel#dateLabel, DreamListWidgetItem QLabel#lengthLabel {
+    font-size: 10px; /* Smaller font size for date and length */
+    color: #DBD0B3;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

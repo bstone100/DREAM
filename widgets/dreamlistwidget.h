@@ -4,25 +4,26 @@
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QScrollArea>
+#include "QListWidget"
 
-class DreamListWidget : public QWidget
+class DreamListWidget : public QListWidget
 {
     Q_OBJECT
 
 public:
     static DreamListWidget *self();
     void updateDreams();
+    void updateSize();
 
 signals:
     void dreamClicked(const QString &dreamId);
 
+protected:
+    bool event(QEvent *e) override;
+
 private:
     explicit DreamListWidget(QWidget *parent = nullptr);
     ~DreamListWidget();
-
-    QVBoxLayout *listLayout;
-    QScrollArea *scrollArea;
-    QWidget *container;
 
     static DreamListWidget *singleton;
 };

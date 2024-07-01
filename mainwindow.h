@@ -23,6 +23,7 @@ class SvgButton;
 class ResizingTextEdit;
 class AudioLevel;
 class ResizingComboBox;
+class MoonWidget;
 
 class MainWindow : public QMainWindow
 {
@@ -48,12 +49,14 @@ public:
     static QColor lightMidColor;
     static QColor darkMidColor;
     static QColor darkColor;
+    static QColor sidePanelColorDark;
+    static QColor sidePanelColorLight;
 
     bool isDarkModeOn(){return isDarkMode;}
     bool isSystemDark();
     void handleThemeChange(bool isDarkMode);
 
-    void dumpJsonToFile(QJsonObject &jObj, QString fileName);
+    void dumpJsonToFile(QJsonObject jObj, QString fileName);
     QPropertyAnimation *fadeInWidget(QWidget *widget, int duration);
     QPropertyAnimation *fadeOutWidget(QWidget *widget, int duration);
     QPropertyAnimation *fadeInWidgets(QList<QWidget *> widgets, int duration);
@@ -85,6 +88,7 @@ private:
     QVBoxLayout *layout;
 
     ResizingComboBox *themeComboBox;
+    MoonWidget *moonWidget;
 
     QString apiKey;
     bool isDarkMode;

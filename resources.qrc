@@ -11,5 +11,6 @@
         <file>style/style.qss</file>
         <file>images/pandaTask.png</file>
         <file>images/mic_1107.png</file>
+        <file>images/dream.png</file>
     </qresource>
 </RCC>

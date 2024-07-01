@@ -1,5 +1,6 @@
 #include "recordbutton.h"
 #include "../audio/audiotranscriptionmanager.h"
+#include "../mainwindow.h"
 
 RecordButton::RecordButton(QWidget *parent)
     : QWidget(parent)
@@ -13,7 +14,7 @@ void RecordButton::paintEvent(QPaintEvent *event) {
     painter.setRenderHint(QPainter::Antialiasing);
 
     // paint outer white circle
-    painter.setPen(QPen(Qt::white, 2));
+    painter.setPen(QPen(MainWindow::lightColor, 2));
     painter.setBrush(Qt::transparent);
     painter.drawEllipse(1, 1, size - 2, size - 2);
 

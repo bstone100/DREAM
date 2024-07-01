@@ -80,6 +80,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         widgets/waveformwidget.h widgets/waveformwidget.cpp
         widgets/dreamlistwidget.h widgets/dreamlistwidget.cpp
         locationmanager.h locationmanager.cpp
+        widgets/dreamlistwidgetitem.h widgets/dreamlistwidgetitem.cpp
+        widgets/moonwidget.h widgets/moonwidget.cpp
     )
     if (ANDROID)
         add_android_openssl_libraries(DreamRecorder)
