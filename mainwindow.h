@@ -111,6 +111,7 @@ private:
 
     QString newOriginalDreamID;
     void handleLocationObtained(QString text);
+    void handleGenerationFinished();
 
 };
 

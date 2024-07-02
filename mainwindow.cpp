@@ -49,7 +49,7 @@ QString MainWindow::currentPath;
 QColor MainWindow::lightColor = 0xfdf1c8;
 QColor MainWindow::lightMidColor = 0x2a284c;
 QColor MainWindow::darkMidColor = 0x220f30;
-QColor MainWindow::darkColor = 0x423c56;
+QColor MainWindow::darkColor = 0x413c56;
 QColor MainWindow::sidePanelColorDark = 0x100e29;
 QColor MainWindow::sidePanelColorLight = 0xA6A8AF;
 
@@ -116,9 +116,6 @@ MainWindow::MainWindow(QWidget *parent)
     themeComboBox->setStyleSheet("combobox-popup: 0;");
 #endif
 
-    connect(LocationManager::self(), &LocationManager::locationObtained, this, &MainWindow::handleLocationObtained);
-
-
     // hard code this
     apiKey = "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";
 
@@ -135,6 +132,12 @@ MainWindow::MainWindow(QWidget *parent)
                              "If the user didn't describe any dreams then don't respond at all, just leave your response blank.";
 
     chatRequest->addMessage(new OpenAIMessage(systemPrompt, OpenAIMessage::System));
+
+
+    connect(LocationManager::self(), &LocationManager::locationObtained, this, &MainWindow::handleLocationObtained);
+    connect(chatRequest, &OpenAIRequest::requestFinished, this, &MainWindow::handleGenerationFinished);
+
+
 
     // side panel
     SvgButton *drawerButton = new SvgButton(this);
@@ -198,8 +201,8 @@ MainWindow::MainWindow(QWidget *parent)
     auto secondRowLayout = new QHBoxLayout;
 //    secondRowLayout->addWidget(pageTitle, 0, Qt::AlignLeft | Qt::AlignHCenter);
     secondRowLayout->addStretch();
-    secondRowLayout->addWidget(moonWidget, 0, Qt::AlignRight | Qt::AlignHCenter);
-    secondRowLayout->setContentsMargins(14,0,0,0);
+    secondRowLayout->addWidget(moonWidget);
+    secondRowLayout->setContentsMargins(0,0,0,0);
 
     // Adding layouts and widgets to the main layout
     layout->addLayout(topRowLayout);
@@ -242,6 +245,8 @@ void MainWindow::sendChat()
 {
     QString message = AudioRecorderWidget::self()->getTranscriptTextEdit()->toPlainText();
 
+    if (message == "") return;
+
     Dream dream;
     dream.originalTranscript = message;
     dream.recordingLength = AudioTranscriptionManager::self()->getRecordingTime();
@@ -255,8 +260,6 @@ void MainWindow::sendChat()
     DreamManager::self()->insertDream(dream);
     updateWidgets();
     LocationManager::self()->requestUserLocation();
-
-    if (message == "") return;
 
     OpenAIMessage *userMessage = new OpenAIMessage("", OpenAIMessage::Role::User);
     userMessage->setUserMessage(message);
@@ -283,6 +286,20 @@ void MainWindow::handleLocationObtained(QString text)
     }
 
     updateWidgets();
+}
+
+// remove the original dream if it has no children after generation
+void MainWindow::handleGenerationFinished()
+{
+    chatRequest->removeAllMessagesExceptSystem();
+
+    Dream dream = DreamManager::self()->getDream(newOriginalDreamID);
+    if (!dream.isValid()) return;
+
+    if (dream.childIDs.isEmpty()) {
+        DreamManager::self()->removeDream(dream);
+        updateWidgets();
+    }
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

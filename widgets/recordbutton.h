@@ -4,15 +4,19 @@
 #include <QWidget>
 #include <QPainter>
 #include <QMouseEvent>
+#include <QPropertyAnimation>
 
 class RecordButton : public QWidget
 {
     Q_OBJECT
+    Q_PROPERTY(qreal shapeProgress READ shapeProgress WRITE setShapeProgress NOTIFY shapeProgressChanged)
 
 public:
     explicit RecordButton(QWidget *parent = nullptr);
 
     void click();
+    void handleRecordingStateChanged(bool recording);
+
 protected:
     void paintEvent(QPaintEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
@@ -20,11 +24,15 @@ protected:
 
 signals:
     void clicked();
+    void shapeProgressChanged();
 
 private:
-    bool isPressed;
+    qreal shapeProgress() const;
+    void setShapeProgress(qreal progress);
 
-    int size;
+    bool isPressed;
+    bool isRecording;
+    qreal m_shapeProgress;
 };
 
 #endif // RECORDBUTTON_H

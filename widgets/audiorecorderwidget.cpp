@@ -21,7 +21,7 @@ AudioRecorderWidget::AudioRecorderWidget(QWidget *parent)
 
     // Initialize components
     recordButton = new RecordButton(this);
-    recordButton->setFixedSize(50, 50);
+    recordButton->setFixedSize(60, 60);
 
     transcriptTextEdit = new ResizingTextEdit(this);
     transcriptTextEdit->setAcceptRichText(false);
@@ -92,6 +92,8 @@ ResizingTextEdit *AudioRecorderWidget::getTranscriptTextEdit() const
 // called repeatedly during recording with updated transcription
 void AudioRecorderWidget::handleTranscriptionUpdated(QString text)
 {
+//    if (!AudioTranscriptionManager::self()->isRecording()) return;
+
     text = text.trimmed();
     if (text == "you" || text == "." || text == "You" || text == "♪♪") {
         text.clear(); // avoid showing common hallucinations of silence
@@ -131,16 +133,9 @@ void AudioRecorderWidget::handleTimeLimitReached()
 
 void AudioRecorderWidget::handleRecordingStarted()
 {
-    MainWindow::smartSetVisible({waveformWidget, transcriptTextEdit}, true, 500);
+    recordButton->handleRecordingStateChanged(true);
 
-
-//    MainWindow::self()->setWidgetOpacity(waveformWidget, 0.0);
-//    MainWindow::self()->setWidgetOpacity(transcriptTextEdit, 0.0);
-
-//    waveformWidget->show();
-//    transcriptTextEdit->show();
-
-//    MainWindow::self()->fadeInWidgets({waveformWidget, transcriptTextEdit}, 500);
+    MainWindow::self()->fadeInWidgets({waveformWidget, transcriptTextEdit}, 500);
 }
 
 void AudioRecorderWidget::handleRecordingFinished()
@@ -148,22 +143,18 @@ void AudioRecorderWidget::handleRecordingFinished()
     transcriptionBeginning.clear();
     transcriptionCurrent.clear();
 
-    transcriptTextEdit->clear();
+    recordButton->handleRecordingStateChanged(false);
 
-    MainWindow::smartSetVisible({waveformWidget, transcriptTextEdit}, false, 500);
+    // fade out and hide once faded
+    auto anim = MainWindow::self()->fadeOutWidget(waveformWidget, 500);
+    MainWindow::self()->fadeOutWidget(transcriptTextEdit, 500);
+    connect(anim, &QPropertyAnimation::finished, this, [&]{
+        transcriptTextEdit->clear();
+        waveformWidget->clearLevels();
 
-//    // fade out and hide once faded
-//    auto anim = MainWindow::self()->fadeOutWidget(waveformWidget, 500);
-//    MainWindow::self()->fadeOutWidget(transcriptTextEdit, 500);
-//    connect(anim, &QPropertyAnimation::finished, this, [&]{
-//        transcriptTextEdit->clear();
-
-////        waveformWidget->hide();
-////        transcriptTextEdit->hide();
-//        MainWindow::smartSetVisible({waveformWidget, transcriptTextEdit}, false, 500);
-//    });
-
-    waveformWidget->clearLevels(); // clear after collapse animation finished
+        waveformWidget->hide();
+        transcriptTextEdit->hide();
+    });
 }
 
 int AudioRecorderWidget::getCurrentTranscriptionWordCount()

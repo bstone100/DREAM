@@ -203,7 +203,6 @@ void OpenAIRequest::sendChatCompletionsRequest()
 
             if (tool_calls.isEmpty()) {
                 // it's done making function calls and we have a message response
-                removeAllMessagesExceptSystem();
 
                 emit requestFinished(content);
             } else {

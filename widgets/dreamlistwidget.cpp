@@ -41,13 +41,14 @@ void DreamListWidget::updateDreams() {
 
     // Get all dreams
     QList<Dream> dreams = DreamManager::self()->getAllDreams();
+    std::sort(dreams.rbegin(), dreams.rend());
 
     // Iterate over each dream and create a new list item widget
-    for (const Dream &dream : dreams) {
-        if (!dream.isGenerated && dream.childIDs.size() > 0) continue;
+    foreach (auto dream, dreams) {
+        if (!dream.isGenerated) continue;
 
         // Format the date and time for display
-        QString dateStr = dream.recordingDateTime.toString("MMM d, yyyy");
+        QString dateStr = dream.recordingDateTime.toString("hh:mm AP, MMM d, yyyy");
 
         // Format recording length from milliseconds to a more readable format
         int seconds = (dream.recordingLength / 1000) % 60;
