@@ -32,6 +32,7 @@
 #include "dreammanager.h"
 #include "locationmanager.h"
 #include "widgets/moonwidget.h"
+#include "widgets/fulldreamwidget.h"
 
 
 #if defined(Q_OS_IOS)
@@ -197,6 +198,13 @@ MainWindow::MainWindow(QWidget *parent)
     moonWidget = new MoonWidget(this);
     moonWidget->setFixedSize(80,80);
     moonWidget->resizeImage();
+
+    fullDreamWidget = new FullDreamWidget(this);
+    fullDreamWidget->hide();
+
+    connect(fullDreamWidget, &FullDreamWidget::backButtonClicked, this, &MainWindow::handleFullDreamBackButtonClicked);
+    connect(DreamListWidget::self(), &DreamListWidget::dreamClicked, this, &MainWindow::handleDreamItemClicked);
+
 
     auto secondRowLayout = new QHBoxLayout;
 //    secondRowLayout->addWidget(pageTitle, 0, Qt::AlignLeft | Qt::AlignHCenter);
@@ -762,6 +770,39 @@ QString MainWindow::getNewOriginalDreamID() const
 {
     return newOriginalDreamID;
 }
+
+
+void MainWindow::handleDreamItemClicked(const QString &dreamID)
+{
+    // show full screen widget
+    // hide list widget
+
+    fullDreamWidget->setDream(dreamID);
+    fullDreamWidget->setGeometry(DreamListWidget::self()->geometry());
+
+    fullDreamWidget->show();
+    DreamListWidget::self()->hide();
+}
+
+void MainWindow::handleFullDreamBackButtonClicked()
+{
+    // show dream list
+    // hide full screen widget
+
+    DreamListWidget::self()->setGeometry(fullDreamWidget->geometry());
+
+    DreamListWidget::self()->show();
+    fullDreamWidget->hide();
+}
+
+
+
+
+
+
+
+
+
 
 
 

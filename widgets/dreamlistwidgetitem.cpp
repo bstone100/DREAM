@@ -1,21 +1,33 @@
 #include "dreamlistwidgetitem.h"
 #include <QHBoxLayout>
+#include "../dreammanager.h"
 
-DreamListWidgetItem::DreamListWidgetItem(const QString &title, const QString &date, const QString &length, QWidget *parent)
-    : QPushButton(parent) {
+DreamListWidgetItem::DreamListWidgetItem(const QString &dreamID, QWidget *parent)
+    : QPushButton(parent), dreamID(dreamID)
+{
+    Dream dream = DreamManager::self()->getDream(dreamID);
+
     // Main layout
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
 
     // Top layout for the title
     QHBoxLayout *topLayout = new QHBoxLayout();
-    titleLabel = new QLabel(title, this);
+    titleLabel = new QLabel(dream.title, this);
     topLayout->addWidget(titleLabel);
     topLayout->addStretch();
 
+    // Format the date and time for display
+    QString dateStr = dream.recordingDateTime.toString("hh:mm AP, MMM d, yyyy");
+
+    // Format recording length from milliseconds to a more readable format
+    int seconds = (dream.recordingLength / 1000) % 60;
+    int minutes = (dream.recordingLength / 60000) % 60;
+    QString lengthStr = QString("%1:%2").arg(minutes, 2, 10, QLatin1Char('0')).arg(seconds, 2, 10, QLatin1Char('0'));
+
     // Bottom layout for the date and length
     QHBoxLayout *bottomLayout = new QHBoxLayout();
-    dateLabel = new QLabel(date, this);
-    lengthLabel = new QLabel(length, this);
+    dateLabel = new QLabel(dateStr, this);
+    lengthLabel = new QLabel(lengthStr, this);
 
     bottomLayout->addWidget(dateLabel);
     bottomLayout->addStretch();
@@ -32,6 +44,11 @@ DreamListWidgetItem::DreamListWidgetItem(const QString &title, const QString &da
     mainLayout->setContentsMargins(14,5,14,7);
 
     setAttribute(Qt::WA_StyledBackground);
+}
+
+QString DreamListWidgetItem::getDreamID() const
+{
+    return dreamID;
 }
 
 

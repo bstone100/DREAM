@@ -9,9 +9,13 @@ class DreamListWidgetItem : public QPushButton {
     Q_OBJECT
 
 public:
-    explicit DreamListWidgetItem(const QString &title, const QString &date, const QString &length, QWidget *parent = nullptr);
+    explicit DreamListWidgetItem(const QString &dreamID, QWidget *parent = nullptr);
+
+    QString getDreamID() const;
 
 private:
+    QString dreamID;
+
     QLabel *titleLabel;
     QLabel *dateLabel;
     QLabel *lengthLabel;

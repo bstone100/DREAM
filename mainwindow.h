@@ -24,6 +24,7 @@ class ResizingTextEdit;
 class AudioLevel;
 class ResizingComboBox;
 class MoonWidget;
+class FullDreamWidget;
 
 class MainWindow : public QMainWindow
 {
@@ -89,6 +90,10 @@ private:
 
     ResizingComboBox *themeComboBox;
     MoonWidget *moonWidget;
+    FullDreamWidget *fullDreamWidget;
+
+    void handleDreamItemClicked(const QString &dreamID);
+    void handleFullDreamBackButtonClicked();
 
     QString apiKey;
     bool isDarkMode;

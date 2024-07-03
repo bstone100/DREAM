@@ -123,7 +123,9 @@ DreamListWidgetItem QLabel#dateLabel, DreamListWidgetItem QLabel#lengthLabel {
     color: #DBD0B3;
 }
 
-
+FullDreamWidget {
+    background: @backgroundColor;
+}
 
 
 

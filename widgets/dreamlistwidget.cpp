@@ -31,7 +31,7 @@ DreamListWidget::~DreamListWidget() {}
 DreamListWidget *DreamListWidget::self()
 {
     if (!singleton)
-        singleton = new DreamListWidget();
+        singleton = new DreamListWidget(MainWindow::self());
     return singleton;
 }
 
@@ -47,16 +47,12 @@ void DreamListWidget::updateDreams() {
     foreach (auto dream, dreams) {
         if (!dream.isGenerated) continue;
 
-        // Format the date and time for display
-        QString dateStr = dream.recordingDateTime.toString("hh:mm AP, MMM d, yyyy");
-
-        // Format recording length from milliseconds to a more readable format
-        int seconds = (dream.recordingLength / 1000) % 60;
-        int minutes = (dream.recordingLength / 60000) % 60;
-        QString lengthStr = QString("%1:%2").arg(minutes, 2, 10, QLatin1Char('0')).arg(seconds, 2, 10, QLatin1Char('0'));
-
         // Create the custom list item widget
-        DreamListWidgetItem *itemWidget = new DreamListWidgetItem(dream.title, dateStr, lengthStr);
+        DreamListWidgetItem *itemWidget = new DreamListWidgetItem(dream.id);
+
+        connect(itemWidget, &DreamListWidgetItem::clicked, this, [=]{
+            emit dreamClicked(dream.id);
+        });
 
         // Create a QListWidgetItem and set its size
         QListWidgetItem *listItem = new QListWidgetItem(this);
