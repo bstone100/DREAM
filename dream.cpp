@@ -1,6 +1,7 @@
 #include "dream.h"
 #include "QJsonArray"
 #include "dreammanager.h"
+#include "locationmanager.h"
 
 Dream::Dream()
 {
@@ -36,7 +37,7 @@ QJsonObject Dream::toJson() const {
         {"childIDs", QJsonArray::fromStringList(childIDs)},
         {"originalTranscript", originalTranscript},
         {"recordingDateTime", recordingDateTime.toString("yyyy-MM-dd HH:mm")},
-        {"recordingLocation", recordingLocation},
+        {"recordingLocation", LocationManager::geoAddressToJson(recordingLocation)},
         {"recordingLength", recordingLength},
         {"revisedTranscript", revisedTranscript},
         {"title", title},
@@ -67,7 +68,7 @@ void Dream::updateFromJson(const QJsonObject &obj)
         recordingDateTime = QDateTime::fromString(obj["recordingDateTime"].toString(), "yyyy-MM-dd HH:mm");
     }
     if (obj.contains("recordingLocation")) {
-        recordingLocation = obj["recordingLocation"].toString();
+        recordingLocation = LocationManager::jsonToGeoAddress(obj["recordingLocation"].toObject());
     }
     if (obj.contains("recordingLength")) {
         recordingLength = obj["recordingLength"].toInt();

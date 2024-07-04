@@ -11,6 +11,7 @@
 #include <QTouchEvent>
 #include "QTextEdit"
 #include "QStackedWidget"
+#include "QtPositioning/qgeoaddress.h"
 #include "qpropertyanimation.h"
 #include "QQueue"
 #include "QTableView"
@@ -115,7 +116,7 @@ private:
     // dream
 
     QString newOriginalDreamID;
-    void handleLocationObtained(QString text);
+    void handleLocationObtained(QGeoAddress location);
     void handleGenerationFinished();
 
 };

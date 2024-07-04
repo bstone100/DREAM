@@ -247,6 +247,7 @@ void MainWindow::updateWidgets()
 {
     // call update function on widgets that depend on dream manager
     DreamListWidget::self()->updateDreams();
+    fullDreamWidget->updateWidget();
 }
 
 void MainWindow::sendChat()
@@ -279,17 +280,17 @@ void MainWindow::sendChat()
     chatRequest->execute();
 }
 
-void MainWindow::handleLocationObtained(QString text)
+void MainWindow::handleLocationObtained(QGeoAddress location)
 {
     Dream dream = DreamManager::self()->getDream(newOriginalDreamID);
     if (!dream.isValid()) return;
 
-    dream.recordingLocation = text;
+    dream.recordingLocation = location;
     DreamManager::self()->insertDream(dream);
 
     foreach (auto childID, dream.childIDs) {
         Dream childDream = DreamManager::self()->getDream(childID);
-        childDream.recordingLocation = text;
+        childDream.recordingLocation = location;
         DreamManager::self()->insertDream(childDream);
     }
 
@@ -778,7 +779,7 @@ void MainWindow::handleDreamItemClicked(const QString &dreamID)
     // hide list widget
 
     fullDreamWidget->setDream(dreamID);
-    fullDreamWidget->setGeometry(DreamListWidget::self()->geometry());
+    fullDreamWidget->setGeometry(0,0,width(),height());
 
     fullDreamWidget->show();
     DreamListWidget::self()->hide();
@@ -789,7 +790,7 @@ void MainWindow::handleFullDreamBackButtonClicked()
     // show dream list
     // hide full screen widget
 
-    DreamListWidget::self()->setGeometry(fullDreamWidget->geometry());
+//    DreamListWidget::self()->setGeometry(fullDreamWidget->geometry());
 
     DreamListWidget::self()->show();
     fullDreamWidget->hide();

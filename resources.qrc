@@ -15,5 +15,7 @@
         <file>images/dream_1024.png</file>
         <file>images/moon_blurred.png</file>
         <file>images/dream_blurred.png</file>
+        <file>images/trash.svg</file>
+        <file>images/heart.svg</file>
     </qresource>
 </RCC>

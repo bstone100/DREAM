@@ -17,7 +17,7 @@ DreamListWidgetItem::DreamListWidgetItem(const QString &dreamID, QWidget *parent
     topLayout->addStretch();
 
     // Format the date and time for display
-    QString dateStr = dream.recordingDateTime.toString("hh:mm AP, MMM d, yyyy");
+    QString dateStr = dream.recordingDateTime.toString("h:mm A, MMM d, yyyy");
 
     // Format recording length from milliseconds to a more readable format
     int seconds = (dream.recordingLength / 1000) % 60;

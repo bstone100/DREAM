@@ -34,6 +34,9 @@ SvgButton::SvgButton(QWidget *parent) : QPushButton(parent),
     connect(this, &QPushButton::clicked, this, &generateHapticFeedback);
 #endif
 
+    shouldModifyStrokeColor = true;
+    shouldModifyFillColor = false;
+
     usingAppColors = false;
 }
 
@@ -144,6 +147,18 @@ void SvgButton::stopColorOverride()
     updateColor();
 }
 
+void SvgButton::setShouldModifyFillColor(bool newShouldModifyFillColor)
+{
+    shouldModifyFillColor = newShouldModifyFillColor;
+    update();
+}
+
+void SvgButton::setShouldModifyStrokeColor(bool newShouldModifyStrokeColor)
+{
+    shouldModifyStrokeColor = newShouldModifyStrokeColor;
+    updateColor();
+}
+
 bool SvgButton::event(QEvent *event) {
     switch (event->type()) {
     case QEvent::Enter:
@@ -166,13 +181,8 @@ void SvgButton::paintEvent(QPaintEvent *event) {
 
     if (originalSvgString == "") return;
 
-    // generate and cache the svg strings
-    QRgb curRgb = m_currentColor.rgb();
-    if (!colorToSvgString.contains(curRgb)) {
-        QString newSvgString = modifySvgColor(originalSvgString, m_currentColor);
-        colorToSvgString.insert(curRgb, newSvgString);
-    }
-    QString svgContent = colorToSvgString.value(curRgb);
+    QString newSvgString = modifySvgColor(originalSvgString, m_currentColor, shouldModifyFillColor, shouldModifyStrokeColor);
+    QString svgContent = newSvgString;
 
     QSvgRenderer renderer(svgContent.toUtf8());
     QPainter painter(this);
@@ -265,49 +275,35 @@ void SvgButton::updateColor()
     update();
 }
 
-QString SvgButton::modifySvgColor(const QString &svgContent, const QColor &color) {
+QString SvgButton::modifySvgColor(const QString &svgContent, const QColor &color, bool colorFill, bool colorStroke) {
     QString modifiedSvgContent = svgContent;
 
-    // Regex to match fill and stroke attributes with various color values
-    static QRegularExpression fillStrokeAttrRegex("(fill|stroke)\\s*=\\s*\"(#[0-9a-fA-F]{3,6})\"");
+    // Regex to match fill and stroke attributes with various color values including named colors
+    static QRegularExpression fillAttrRegex("fill\\s*=\\s*\"(#[0-9a-fA-F]{3,6}|[a-zA-Z]+)\"");
+    static QRegularExpression strokeAttrRegex("stroke\\s*=\\s*\"(#[0-9a-fA-F]{3,6}|[a-zA-Z]+)\"");
 
-    // Regex to match CSS styles for fill and stroke
-    static QRegularExpression cssFillStyleRegex("(\\.st\\d+\\{[^}]*fill:)#[0-9a-fA-F]{3,6}([^}]*\\})");
-    static QRegularExpression cssStrokeStyleRegex("(\\.st\\d+\\{[^}]*stroke:)#[0-9a-fA-F]{3,6}([^}]*\\})");
+    // Regex to match CSS styles for fill and stroke including named colors
+    static QRegularExpression cssFillStyleRegex("(\\.st\\d+\\{[^}]*)(fill):(#[0-9a-fA-F]{3,6}|[a-zA-Z]+)([^}]*\\})");
+    static QRegularExpression cssStrokeStyleRegex("(\\.st\\d+\\{[^}]*)(stroke):(#[0-9a-fA-F]{3,6}|[a-zA-Z]+)([^}]*\\})");
 
-    QString replacementFillColor = color.name(QColor::HexRgb);
-    QString replacementStrokeColor = color.name(QColor::HexRgb); // Use the same color for stroke, or adjust as needed
+    QString replacementColor = color.name(QColor::HexRgb);
 
-    // Replace inline fill and stroke attributes
-    modifiedSvgContent.replace(fillStrokeAttrRegex, QString("\\1=\"%2\"").arg(replacementFillColor));
+    // Replace inline fill attributes if colorFill is true
+    if (colorFill) {
+        modifiedSvgContent.replace(fillAttrRegex, QString("fill=\"%1\"").arg(replacementColor));
+        modifiedSvgContent.replace(cssFillStyleRegex, QString("\\1fill:%1\\3").arg(replacementColor));
+    }
 
-    // Replace fill and stroke within CSS styles
-    modifiedSvgContent.replace(cssFillStyleRegex, QString("\\1%1\\2").arg(replacementFillColor));
-    modifiedSvgContent.replace(cssStrokeStyleRegex, QString("\\1%1\\2").arg(replacementStrokeColor));
+    // Replace inline stroke attributes if colorStroke is true
+    if (colorStroke) {
+        modifiedSvgContent.replace(strokeAttrRegex, QString("stroke=\"%1\"").arg(replacementColor));
+        modifiedSvgContent.replace(cssStrokeStyleRegex, QString("\\1stroke:%1\\3").arg(replacementColor));
+    }
 
     return modifiedSvgContent;
 }
 
 
-
-// not using
-QIcon SvgButton::createIconFromSVG(const QString &svgPath, const QColor &color, QSize iconSize) {
-    QSvgRenderer renderer(svgPath); // Load the SVG file
-
-    QImage image(iconSize, QImage::Format_ARGB32);
-    image.fill(Qt::transparent); // Ensure the background is transparent
-
-    QPainter painter(&image);
-    renderer.render(&painter);
-
-    QPixmap pixmap = QPixmap::fromImage(image);
-    QPainter pixmapPainter(&pixmap);
-    pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceIn);
-    pixmapPainter.fillRect(pixmap.rect(), color);
-    pixmapPainter.end();
-
-    return QIcon(pixmap);
-}
 
 
 

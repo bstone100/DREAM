@@ -7,6 +7,8 @@
 #include <QCheckBox>
 #include <QVBoxLayout>
 
+class SvgButton;
+
 class FullDreamWidget : public QWidget {
     Q_OBJECT
 
@@ -16,22 +18,30 @@ public:
     void setDream(const QString &dreamId);
     void updateWidget();
 
+    void handleWidgetInteraction();
+
 signals:
     void backButtonClicked();
 
 private:
     QString currentDreamID;
 
-    QPushButton *backButton;
+    SvgButton *backButton;
+    SvgButton *heartButton;
+    SvgButton *trashButton;
+
     QLabel *titleLabel;
-    QLabel *dateTimeLabel;
-    QLabel *locationLabel;
+    QLabel *dateTimeLocationLabel;
+
     QCheckBox *nightmareCheckBox;
     QCheckBox *lucidCheckBox;
-    QCheckBox *favoritedCheckBox;
+
     QLabel *transcriptLabel;
 
     QVBoxLayout *mainLayout;
+
+    void handleTrashClicked();
+    void updateHeart();
 };
 
 #endif // FULLDREAMWIDGET_H

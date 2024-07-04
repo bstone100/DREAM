@@ -29,8 +29,8 @@ if(APPLE)
         "${CMAKE_CURRENT_SOURCE_DIR}/images/dream.icns"
         "${CMAKE_CURRENT_SOURCE_DIR}/iOS/LaunchScreen.storyboard"
         "${CMAKE_CURRENT_SOURCE_DIR}/iOS/AppIconSet.xcassets"
-        "${CMAKE_CURRENT_SOURCE_DIR}/whisper.cpp/models/ggml-base.en.bin"
-        "${CMAKE_CURRENT_SOURCE_DIR}/whisper.cpp/models/ggml-base.en-encoder.mlmodelc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/whisper.cpp/models/ggml-small.en-q5_1.bin"
+        "${CMAKE_CURRENT_SOURCE_DIR}/whisper.cpp/models/ggml-small.en-encoder.mlmodelc"
         "${CMAKE_CURRENT_SOURCE_DIR}/whisper.cpp/ggml-metal.metal"
         "${CMAKE_CURRENT_SOURCE_DIR}/whisper.cpp/ggml-common.h"
     )

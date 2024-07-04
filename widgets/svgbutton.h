@@ -35,8 +35,7 @@ public:
     void startColorOverride(const QColor &newOverrideColor);
     void stopColorOverride();
 
-    static QString modifySvgColor(const QString &svgContent, const QColor &color);
-    static QIcon createIconFromSVG(const QString &svgPath, const QColor &color, QSize iconSize = QSize(24, 24));
+    static QString modifySvgColor(const QString &svgContent, const QColor &color, bool colorFill, bool colorStroke);
 
     bool isUsingAppColors();
     void setUsingAppColors(bool newUsingAppColors);
@@ -55,6 +54,9 @@ public:
     QColor activeHoverColor();
     QColor activePressedColor();
 
+    void setShouldModifyStrokeColor(bool newShouldModifyStrokeColor);
+    void setShouldModifyFillColor(bool newShouldModifyFillColor);
+
 protected:
     bool event(QEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
@@ -70,7 +72,6 @@ private:
     QColor m_hoverColor;
     QColor m_pressedColor;
 
-
     // app defaults
     bool usingAppColors;
     static QColor s_defaultColor;
@@ -79,6 +80,9 @@ private:
     static QColor s_pressedColor;
 
     static QList<SvgButton *> instances;
+
+    bool shouldModifyStrokeColor;
+    bool shouldModifyFillColor;
 
 
     QString originalSvgString;

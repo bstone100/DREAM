@@ -1,6 +1,7 @@
 #ifndef DREAM_H
 #define DREAM_H
 
+#include "QtPositioning/qgeoaddress.h"
 #include <QString>
 #include <QTime>
 #include <QDate>
@@ -16,7 +17,7 @@ struct Dream {
     // original properties
     QString originalTranscript;
     QDateTime recordingDateTime;
-    QString recordingLocation; // from OS
+    QGeoAddress recordingLocation;
     int recordingLength = 0; // ms
 
     // generated properties

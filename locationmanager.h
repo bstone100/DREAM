@@ -14,8 +14,12 @@ public:
     static LocationManager* self();
     void requestUserLocation();
 
+    static QJsonObject geoAddressToJson(const QGeoAddress &address);
+    static QGeoAddress jsonToGeoAddress(const QJsonObject &json);
+    static QString formattedAddress(const QGeoAddress &address);
+
 signals:
-    void locationObtained(const QString &location);
+    void locationObtained(const QGeoAddress &location);
 
 private:
     explicit LocationManager(QObject *parent = nullptr);
