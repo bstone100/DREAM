@@ -130,6 +130,11 @@ void FullDreamWidget::handleWidgetInteraction()
     MainWindow::self()->updateWidgets();
 }
 
+QString FullDreamWidget::getCurrentDreamID() const
+{
+    return currentDreamID;
+}
+
 void FullDreamWidget::handleTrashClicked()
 {
     QMessageBox::StandardButton reply;

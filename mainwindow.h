@@ -11,6 +11,7 @@
 #include <QTouchEvent>
 #include "QTextEdit"
 #include "QStackedWidget"
+#include "QtCore/qelapsedtimer.h"
 #include "QtPositioning/qgeoaddress.h"
 #include "qpropertyanimation.h"
 #include "QQueue"
@@ -30,7 +31,7 @@ class FullDreamWidget;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-
+    Q_PROPERTY(QColor backgroundColor READ backgroundColor WRITE setBackgroundColor NOTIFY backgroundColorChanged)
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
@@ -70,6 +71,11 @@ public:
 
     QString getNewOriginalDreamID() const;
 
+    QMargins getAppMargins() const;
+
+signals:
+    void backgroundColorChanged();
+
 protected:
     void closeEvent(QCloseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
@@ -86,6 +92,9 @@ private:
 
     QSettings *settings;
 
+    QMargins appMargins;
+
+    QStackedWidget *stackedWidget;
     QWidget *centralWidget;
     QVBoxLayout *layout;
 
@@ -94,7 +103,11 @@ private:
     FullDreamWidget *fullDreamWidget;
 
     void handleDreamItemClicked(const QString &dreamID);
-    void handleFullDreamBackButtonClicked();
+
+    bool fullDreamWidgetExpanding = false;
+    bool fullDreamWidgetCollapsing = false;
+    void expandFullDreamWidget();
+    void collapseFullDreamWidget();
 
     QString apiKey;
     bool isDarkMode;
@@ -106,12 +119,30 @@ private:
 
     void touchEvent(QTouchEvent *event);
 
+    void exitFullDreamTouchEvent(QTouchEvent *event);
+    void exitFullDreamHandleSwipeEnd();
+
     enum Gesture {
         SidePanel = 0,
+        ExitFullDream,
         Undefined
     };
 
     Gesture currentGesture = Undefined;
+
+    QPoint touchStartPoint;
+    QPoint previousPoint;
+
+    // v = x/t
+    int dx;
+    int dt;
+    qreal progress;
+
+    QElapsedTimer stopwatch;
+
+    QPropertyAnimation *centralWidgetInterpolator = NULL;
+    QPropertyAnimation *fullDreamWidgetInterpolator = NULL;
+    QPropertyAnimation *backgroundColorInterpolator = NULL;
 
     // dream
 
@@ -119,6 +150,16 @@ private:
     void handleLocationObtained(QGeoAddress location);
     void handleGenerationFinished();
 
+    // other
+    QColor backgroundColor() const {
+        return palette().color(QPalette::Window);
+    }
+
+    void setBackgroundColor(const QColor &color) {
+        QPalette pal = palette();
+        pal.setColor(QPalette::Window, color);
+        setPalette(pal);
+    }
 };
 
 #endif // MAINWINDOW_H

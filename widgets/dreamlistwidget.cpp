@@ -24,6 +24,8 @@ DreamListWidget::DreamListWidget(QWidget *parent)
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 #endif
+
+    setFocusPolicy(Qt::NoFocus);
 }
 
 DreamListWidget::~DreamListWidget() {}
@@ -38,6 +40,7 @@ DreamListWidget *DreamListWidget::self()
 void DreamListWidget::updateDreams() {
     // Clear existing items
     this->clear();
+    idToItemMap.clear();
 
     // Get all dreams
     QList<Dream> dreams = DreamManager::self()->getAllDreams();
@@ -49,6 +52,7 @@ void DreamListWidget::updateDreams() {
 
         // Create the custom list item widget
         DreamListWidgetItem *itemWidget = new DreamListWidgetItem(dream.id);
+        idToItemMap.insert(dream.id, itemWidget);
 
         connect(itemWidget, &DreamListWidgetItem::clicked, this, [=]{
             emit dreamClicked(dream.id);
@@ -66,10 +70,22 @@ void DreamListWidget::updateDreams() {
     }
 }
 
+void DreamListWidget::uncheckItemWidgets()
+{
+    foreach (auto itemWidget, idToItemMap) {
+        itemWidget->setChecked(false);
+    }
+}
+
 void DreamListWidget::updateSize()
 {
     int width = MainWindow::self()->width() * .95;
     setFixedWidth(width);
+}
+
+DreamListWidgetItem *DreamListWidget::getDreamItem(const QString &dreamID)
+{
+    return idToItemMap.value(dreamID);
 }
 
 bool DreamListWidget::event(QEvent *e)

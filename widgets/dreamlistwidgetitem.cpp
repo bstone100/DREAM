@@ -44,6 +44,9 @@ DreamListWidgetItem::DreamListWidgetItem(const QString &dreamID, QWidget *parent
     mainLayout->setContentsMargins(14,5,14,7);
 
     setAttribute(Qt::WA_StyledBackground);
+
+    setCheckable(true);
+    setChecked(false);
 }
 
 QString DreamListWidgetItem::getDreamID() const

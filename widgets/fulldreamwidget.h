@@ -20,6 +20,8 @@ public:
 
     void handleWidgetInteraction();
 
+    QString getCurrentDreamID() const;
+
 signals:
     void backButtonClicked();
 

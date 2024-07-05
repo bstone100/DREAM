@@ -6,6 +6,8 @@
 #include <QScrollArea>
 #include "QListWidget"
 
+class DreamListWidgetItem;
+
 class DreamListWidget : public QListWidget
 {
     Q_OBJECT
@@ -13,7 +15,10 @@ class DreamListWidget : public QListWidget
 public:
     static DreamListWidget *self();
     void updateDreams();
+    void uncheckItemWidgets();
     void updateSize();
+
+    DreamListWidgetItem *getDreamItem(const QString &dreamID);
 
 signals:
     void dreamClicked(const QString &dreamId);
@@ -26,6 +31,8 @@ private:
     ~DreamListWidget();
 
     static DreamListWidget *singleton;
+
+    QMap<QString, DreamListWidgetItem *> idToItemMap;
 };
 
 #endif // DREAMLISTWIDGET_H

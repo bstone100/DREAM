@@ -5,9 +5,7 @@ QWidget {
     color: @foregroundColor;
 }
 
-QMainWindow {
-    background-color: @backgroundColor;
-}
+
 
 QGroupBox {
     background-color: @backgroundColor;
@@ -102,6 +100,14 @@ QListView::item:selected:!active {
     background: transparent;
 }
 
+QListView::item:checked {
+    background: transparent;
+}
+
+QListView::item:!checked {
+    background: transparent;
+}
+
 DreamListWidgetItem {
     background: transparent;
     border: 0px;
@@ -110,6 +116,10 @@ DreamListWidgetItem {
 }
 
 DreamListWidgetItem:pressed {
+    background: #645D6B;
+}
+
+DreamListWidgetItem:checked {
     background: #645D6B;
 }
 
@@ -127,7 +137,9 @@ FullDreamWidget {
     background: @backgroundColor;
 }
 
-
+AudioRecorderWidget {
+    background: transparent;
+}
 
 
 

@@ -33,6 +33,7 @@
 #include "locationmanager.h"
 #include "widgets/moonwidget.h"
 #include "widgets/fulldreamwidget.h"
+#include "widgets/dreamlistwidgetitem.h"
 
 
 #if defined(Q_OS_IOS)
@@ -86,11 +87,22 @@ MainWindow::MainWindow(QWidget *parent)
 
     settings = new QSettings;
 
+    stackedWidget = new QStackedWidget(this);
+
     centralWidget = new QWidget(this);
     centralWidget->setFocusPolicy(Qt::StrongFocus);
-    setCentralWidget(centralWidget);
-
     layout = new QVBoxLayout(centralWidget);
+
+    fullDreamWidget = new FullDreamWidget(this);
+
+    stackedWidget->addWidget(centralWidget);
+    stackedWidget->addWidget(fullDreamWidget);
+    stackedWidget->setCurrentWidget(centralWidget);
+    setCentralWidget(stackedWidget);
+
+
+    connect(fullDreamWidget, &FullDreamWidget::backButtonClicked, this, &MainWindow::collapseFullDreamWidget);
+    connect(DreamListWidget::self(), &DreamListWidget::dreamClicked, this, &MainWindow::handleDreamItemClicked);
 
 
     themeComboBox = new ResizingComboBox(SidePanel::self());
@@ -198,12 +210,6 @@ MainWindow::MainWindow(QWidget *parent)
     moonWidget = new MoonWidget(this);
     moonWidget->setFixedSize(80,80);
     moonWidget->resizeImage();
-
-    fullDreamWidget = new FullDreamWidget(this);
-    fullDreamWidget->hide();
-
-    connect(fullDreamWidget, &FullDreamWidget::backButtonClicked, this, &MainWindow::handleFullDreamBackButtonClicked);
-    connect(DreamListWidget::self(), &DreamListWidget::dreamClicked, this, &MainWindow::handleDreamItemClicked);
 
 
     auto secondRowLayout = new QHBoxLayout;
@@ -390,8 +396,10 @@ void MainWindow::setDarkMode(bool isDarkMode)
     }
 
     if (isDarkMode) {
+        setBackgroundColor(darkColor);
         SvgButton::setAppColors(lightColor, lightColor, lightColor, lightColor);
     } else {
+        setBackgroundColor(lightColor);
         SvgButton::setAppColors(darkColor, darkColor, darkColor, darkColor);
     }
 }
@@ -458,6 +466,21 @@ void MainWindow::loadSettings()
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
+    // allow widgets to paint their background color over the safe areas
+    if (obj == this && event->type() == QEvent::Show) {
+        appMargins = this->contentsMargins();
+
+        // this lets the central widget paint the safe area
+        // we need to manually enforce the safe area
+        setWindowFlag(Qt::MaximizeUsingFullscreenGeometryHint,true);
+        setAttribute(Qt::WA_ContentsMarginsRespectsSafeArea,false);
+
+        this->updateGeometry();
+
+        centralWidget->setContentsMargins(appMargins);
+        fullDreamWidget->setContentsMargins(appMargins);
+    }
+
     // handle mobile gestures
     switch (event->type()) {
     case QEvent::TouchBegin:
@@ -717,7 +740,6 @@ void MainWindow::smartSetVisible(QList<QWidget *> widgets, bool visible, int dur
     animation->start(QAbstractAnimation::DeleteWhenStopped);
 }
 
-
 // determine which gesture is happening and redirect touch events until the finger is lifted
 void MainWindow::touchEvent(QTouchEvent *event)
 {
@@ -731,14 +753,17 @@ void MainWindow::touchEvent(QTouchEvent *event)
 
     bool onLeftEdge = (currentTouchPoint.x() <= edgeThreshold);
 
+    QWidget *currentWidget = stackedWidget->currentWidget();
+
     // set currentGesture based on initial touch
     if (event->type() == QEvent::TouchBegin) {
         if (SidePanel::self()->isVisibleToUser()) {
             // side panel is already showing
             currentGesture = SidePanel;
-        } else if (onLeftEdge) {
-            // calendar is showing and touch was on left edge
+        } else if (currentWidget == centralWidget && onLeftEdge) {
             currentGesture = SidePanel;
+        } else if (currentWidget == fullDreamWidget && onLeftEdge) {
+            currentGesture = ExitFullDream;
         } else {
             currentGesture = Undefined;
         }
@@ -752,6 +777,9 @@ void MainWindow::touchEvent(QTouchEvent *event)
         switch (currentGesture) {
         case SidePanel:
             SidePanel::self()->touchEvent(event);
+            break;
+        case ExitFullDream:
+            exitFullDreamTouchEvent(event);
             break;
         case Undefined:
             break;
@@ -767,6 +795,126 @@ void MainWindow::touchEvent(QTouchEvent *event)
     }
 }
 
+void MainWindow::exitFullDreamTouchEvent(QTouchEvent *event)
+{
+    const QList<QTouchEvent::TouchPoint> &touchPoints = event->points();
+    if (touchPoints.isEmpty()) return;
+
+    const QTouchEvent::TouchPoint &touchPoint = touchPoints.first();
+    QPoint currentTouchPoint = touchPoint.position().toPoint();
+
+    switch (event->type()) {
+    case QEvent::TouchBegin: {
+#if defined(Q_OS_IOS)
+        prepareHapticFeedback();
+#endif
+
+        dx = 0;
+        dt = 0;
+
+        stopwatch.start();
+
+        touchStartPoint = currentTouchPoint;
+        previousPoint = currentTouchPoint;
+
+
+        // copy from collapse function
+        if (!centralWidgetInterpolator) {
+            centralWidgetInterpolator = new QPropertyAnimation(centralWidget, "geometry");
+
+            fullDreamWidgetInterpolator = new QPropertyAnimation(fullDreamWidget, "geometry");
+
+            backgroundColorInterpolator = new QPropertyAnimation(this, "backgroundColor");
+            backgroundColorInterpolator->setStartValue(QColor(0x353146));
+            backgroundColorInterpolator->setEndValue(darkColor);
+        }
+
+        QPoint topLeftCorner;
+        int width = stackedWidget->width();
+        int height = stackedWidget->height();
+
+        QRect mainRect(topLeftCorner.x(), topLeftCorner.y(), width, height);
+        QRect rightRect(width, topLeftCorner.y(), width, height);
+
+        // Set the start and end values for the animations
+        centralWidgetInterpolator->setStartValue(centralWidget->geometry());
+        centralWidgetInterpolator->setEndValue(mainRect);
+        fullDreamWidgetInterpolator->setStartValue(fullDreamWidget->geometry());
+        fullDreamWidgetInterpolator->setEndValue(rightRect);
+
+        progress = 0.0;
+    }
+    break;
+    case QEvent::TouchUpdate:
+    {
+        dx = currentTouchPoint.x() - previousPoint.x();
+        dt = stopwatch.restart();
+
+#if defined(Q_OS_IOS)
+        int halfwayPos = this->width() / 2;
+        int currentPos = currentTouchPoint.x();
+        int previousPos = previousPoint.x();
+
+        if (currentPos >= halfwayPos && previousPos < halfwayPos) {
+            generateHapticFeedback();
+            //                qDebug() << "haptic from Left: " << currentPos << halfwayPos;
+        } else if (currentPos <= halfwayPos && previousPos > halfwayPos) {
+            generateHapticFeedback();
+            //                qDebug() << "haptic from Right: " << currentPos << halfwayPos;
+        }
+#endif
+
+        // go to t in animation
+        float curPos = currentTouchPoint.x() - touchStartPoint.x();
+        float availWidth = centralWidget->width() - touchStartPoint.x();
+        progress = qBound(0.0, curPos / availWidth, 1.0);
+
+        fullDreamWidgetInterpolator->setCurrentTime(progress * fullDreamWidgetInterpolator->duration());
+        QRect eventListGeom = fullDreamWidgetInterpolator->currentValue().toRect();
+        fullDreamWidget->setGeometry(eventListGeom);
+
+        centralWidgetInterpolator->setCurrentTime(progress * centralWidgetInterpolator->duration());
+        QRect calendarGeom = centralWidgetInterpolator->currentValue().toRect();
+        centralWidget->setGeometry(calendarGeom);
+
+        backgroundColorInterpolator->setCurrentTime(progress * backgroundColorInterpolator->duration());
+        setBackgroundColor(backgroundColorInterpolator->currentValue().value<QColor>());
+
+        previousPoint = currentTouchPoint;
+    }
+    break;
+    case QEvent::TouchEnd:
+        previousPoint = currentTouchPoint;
+
+        exitFullDreamHandleSwipeEnd();
+        break;
+    default:
+        break;
+    }
+}
+
+void MainWindow::exitFullDreamHandleSwipeEnd()
+{
+    // a click
+    if (progress == 0.0 && previousPoint == touchStartPoint) {
+        return;
+    }
+
+    float velocity = (float)dx / (float)(dt + 1); // pixels per millisecond
+
+    const float thresholdVelocity = 0.3;
+
+    int halfwayPos = this->width() / 2;
+    int currentPos = previousPoint.x();
+
+    // either snap right (close full dream) or snap left (don't close full dream)
+    if (currentPos >= halfwayPos || (velocity > thresholdVelocity && currentPos > 0)) {
+        collapseFullDreamWidget();
+    } else {
+        expandFullDreamWidget();
+    }
+}
+
 QString MainWindow::getNewOriginalDreamID() const
 {
     return newOriginalDreamID;
@@ -775,25 +923,147 @@ QString MainWindow::getNewOriginalDreamID() const
 
 void MainWindow::handleDreamItemClicked(const QString &dreamID)
 {
-    // show full screen widget
-    // hide list widget
+    if (fullDreamWidgetExpanding || fullDreamWidgetCollapsing) return;
 
     fullDreamWidget->setDream(dreamID);
-    fullDreamWidget->setGeometry(0,0,width(),height());
-
-    fullDreamWidget->show();
-    DreamListWidget::self()->hide();
+    expandFullDreamWidget();
 }
 
-void MainWindow::handleFullDreamBackButtonClicked()
+// move full dream widget leftward from the right side of the screen
+// move central widget leftward 1/3 of the way
+void MainWindow::expandFullDreamWidget()
 {
-    // show dream list
-    // hide full screen widget
+    QPropertyAnimation *centralWidgetAnimation = new QPropertyAnimation(centralWidget, "geometry");
+    QPropertyAnimation *fullDreamWidgetAnimation = new QPropertyAnimation(fullDreamWidget, "geometry");
 
-//    DreamListWidget::self()->setGeometry(fullDreamWidget->geometry());
+    // make the main window background color become darker during the animation
+    QPropertyAnimation *backgroundColorAnimation = new QPropertyAnimation(this, "backgroundColor");
 
-    DreamListWidget::self()->show();
-    fullDreamWidget->hide();
+    // central widget and full dream widget are parented by stacked widget
+
+//    QPoint topLeftCorner = fullDreamWidget->mapFromGlobal(this->mapToGlobal(this->pos()));
+    QPoint topLeftCorner;
+    int width = stackedWidget->width();
+    int height = stackedWidget->height();
+
+    QRect mainRect(topLeftCorner.x(), topLeftCorner.y(), width, height);
+    QRect rightRect(width, topLeftCorner.y(), width, height);
+    QRect leftThirdRect(-width / 3, topLeftCorner.y(), width, height);
+
+    // depends on if it's already at top of stack
+    QRect fullDreamWidgetStartRect;
+    QColor startBackgroundColor;
+    if (stackedWidget->currentWidget() == fullDreamWidget) {
+        fullDreamWidgetStartRect = fullDreamWidget->geometry();
+        startBackgroundColor = backgroundColor();
+    } else {
+        fullDreamWidgetStartRect = rightRect;
+        startBackgroundColor = darkColor;
+    }
+
+    backgroundColorAnimation->setStartValue(startBackgroundColor);
+    backgroundColorAnimation->setEndValue(QColor(0x353146));
+
+    // Set the start and end values for the animations
+    centralWidgetAnimation->setStartValue(centralWidget->geometry());
+    centralWidgetAnimation->setEndValue(leftThirdRect);
+    fullDreamWidgetAnimation->setStartValue(fullDreamWidgetStartRect);
+    fullDreamWidgetAnimation->setEndValue(mainRect);
+
+    // Set the duration and easing curve for the animations
+    const int duration = 300;
+    centralWidgetAnimation->setDuration(duration);
+    fullDreamWidgetAnimation->setDuration(duration);
+    backgroundColorAnimation->setDuration(duration);
+//    backgroundColorAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    centralWidgetAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    fullDreamWidgetAnimation->setEasingCurve(QEasingCurve::OutCubic);
+
+    // Set the fullDreamWidget as the current widget before starting the animations
+    stackedWidget->setCurrentWidget(fullDreamWidget);
+    centralWidget->show();
+
+    connect(fullDreamWidgetAnimation, &QPropertyAnimation::finished, this, [this]() {
+        fullDreamWidgetExpanding = false;
+        fullDreamWidgetCollapsing = false;
+
+        DreamListWidget::self()->uncheckItemWidgets();
+    });
+
+    fullDreamWidgetExpanding = true;
+    fullDreamWidgetCollapsing = false;
+
+    // Start the animations
+    centralWidgetAnimation->start(QPropertyAnimation::DeleteWhenStopped);
+    fullDreamWidgetAnimation->start(QPropertyAnimation::DeleteWhenStopped);
+    backgroundColorAnimation->start(QPropertyAnimation::DeleteWhenStopped);
+}
+
+// move full dream widget rightward all the way off the screen
+// move central widget rightward 1/3 of the way
+void MainWindow::collapseFullDreamWidget()
+{
+    QPropertyAnimation *centralWidgetAnimation = new QPropertyAnimation(centralWidget, "geometry");
+    QPropertyAnimation *fullDreamWidgetAnimation = new QPropertyAnimation(fullDreamWidget, "geometry");
+
+    // make the main window background color become lighter during the animation
+    QPropertyAnimation *backgroundColorAnimation = new QPropertyAnimation(this, "backgroundColor");
+
+
+    // central widget and full dream widget are parented by stacked widget
+
+    QPoint topLeftCorner;
+    int width = stackedWidget->width();
+    int height = stackedWidget->height();
+
+    QRect mainRect(topLeftCorner.x(), topLeftCorner.y(), width, height);
+    QRect rightRect(width, topLeftCorner.y(), width, height);
+
+    QColor startBackgroundColor;
+    if (stackedWidget->currentWidget() == fullDreamWidget) {
+        startBackgroundColor = backgroundColor();
+    } else {
+        startBackgroundColor = 0x353146;
+    }
+
+    backgroundColorAnimation->setStartValue(startBackgroundColor);
+    backgroundColorAnimation->setEndValue(darkColor);
+
+    // Set the start and end values for the animations
+    centralWidgetAnimation->setStartValue(centralWidget->geometry());
+    centralWidgetAnimation->setEndValue(mainRect);
+    fullDreamWidgetAnimation->setStartValue(fullDreamWidget->geometry());
+    fullDreamWidgetAnimation->setEndValue(rightRect);
+
+    // Set the duration and easing curve for the animations
+    const int duration = 300;
+    centralWidgetAnimation->setDuration(duration);
+    fullDreamWidgetAnimation->setDuration(duration);
+    backgroundColorAnimation->setDuration(duration);
+//    backgroundColorAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    centralWidgetAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    fullDreamWidgetAnimation->setEasingCurve(QEasingCurve::OutCubic);
+
+    connect(fullDreamWidgetAnimation, &QPropertyAnimation::finished, this, [this]() {
+        fullDreamWidgetExpanding = false;
+        fullDreamWidgetCollapsing = false;
+
+        stackedWidget->setCurrentWidget(centralWidget);
+        DreamListWidget::self()->uncheckItemWidgets();
+    });
+
+    fullDreamWidgetExpanding = false;
+    fullDreamWidgetCollapsing = true;
+
+    // Start the animations
+    centralWidgetAnimation->start(QPropertyAnimation::DeleteWhenStopped);
+    fullDreamWidgetAnimation->start(QPropertyAnimation::DeleteWhenStopped);
+    backgroundColorAnimation->start(QPropertyAnimation::DeleteWhenStopped);
+}
+
+QMargins MainWindow::getAppMargins() const
+{
+    return appMargins;
 }
 
 
