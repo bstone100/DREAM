@@ -11,20 +11,21 @@ DreamListWidget* DreamListWidget::singleton = nullptr;
 DreamListWidget::DreamListWidget(QWidget *parent)
     : QListWidget(parent)
 {
-    QScroller* scroller = QScroller::scroller(this);
+    QScroller* scroller = QScroller::scroller(viewport());
 
     QScrollerProperties properties = scroller->scrollerProperties();
     properties.setScrollMetric(QScrollerProperties::DragStartDistance, 0.0);
     properties.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QVariant::fromValue(QScrollerProperties::OvershootAlwaysOn));
 
     scroller->setScrollerProperties(properties);
-    scroller->grabGesture(this, QScroller::TouchGesture);
-    scroller->grabGesture(this, QScroller::MiddleMouseButtonGesture);
+    scroller->grabGesture(viewport(), QScroller::TouchGesture);
 
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 #endif
 
+    setAttribute(Qt::WA_AcceptTouchEvents,true);
+    setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     setFocusPolicy(Qt::NoFocus);
 }
 
@@ -92,7 +93,6 @@ bool DreamListWidget::event(QEvent *e)
 {
     return QListWidget::event(e);
 }
-
 
 
 

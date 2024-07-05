@@ -73,7 +73,7 @@ FullDreamWidget::FullDreamWidget(QWidget *parent) : QWidget(parent)
 
     setAttribute(Qt::WA_StyledBackground);
 
-    connect(backButton, &QPushButton::clicked, this, &FullDreamWidget::backButtonClicked);
+    connect(backButton, &QPushButton::clicked, MainWindow::self(), &MainWindow::collapseFullDreamWidget);
 }
 
 void FullDreamWidget::setDream(const QString &dreamId) {
@@ -127,6 +127,7 @@ void FullDreamWidget::handleWidgetInteraction()
     // maybe allow other things to be edited by user
 
     DreamManager::self()->insertDream(currentDream);
+    MainWindow::self()->saveSettings();
     MainWindow::self()->updateWidgets();
 }
 
@@ -145,8 +146,9 @@ void FullDreamWidget::handleTrashClicked()
 
     if (reply == QMessageBox::Yes) {
         DreamManager::self()->removeDream(currentDreamID);
+        MainWindow::self()->saveSettings();
         MainWindow::self()->updateWidgets();
-        backButton->click();
+        MainWindow::self()->collapseFullDreamWidget();
     }
 }
 

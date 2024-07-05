@@ -73,6 +73,9 @@ public:
 
     QMargins getAppMargins() const;
 
+    void expandFullDreamWidget();
+    void collapseFullDreamWidget();
+
 signals:
     void backgroundColorChanged();
 
@@ -106,8 +109,6 @@ private:
 
     bool fullDreamWidgetExpanding = false;
     bool fullDreamWidgetCollapsing = false;
-    void expandFullDreamWidget();
-    void collapseFullDreamWidget();
 
     QString apiKey;
     bool isDarkMode;

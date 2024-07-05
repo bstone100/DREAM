@@ -273,7 +273,6 @@ void MainWindow::sendChat()
     newOriginalDreamID = dream.id;
 
     DreamManager::self()->insertDream(dream);
-    updateWidgets();
     LocationManager::self()->requestUserLocation();
 
     OpenAIMessage *userMessage = new OpenAIMessage("", OpenAIMessage::Role::User);
@@ -300,6 +299,7 @@ void MainWindow::handleLocationObtained(QGeoAddress location)
         DreamManager::self()->insertDream(childDream);
     }
 
+    saveSettings();
     updateWidgets();
 }
 
