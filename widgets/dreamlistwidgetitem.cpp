@@ -41,7 +41,7 @@ DreamListWidgetItem::DreamListWidgetItem(const QString &dreamID, QWidget *parent
     mainLayout->addLayout(topLayout);
     mainLayout->addLayout(bottomLayout);
 
-    mainLayout->setContentsMargins(14,5,14,7);
+    mainLayout->setContentsMargins(1,7,14,9);
 
     setAttribute(Qt::WA_StyledBackground);
 

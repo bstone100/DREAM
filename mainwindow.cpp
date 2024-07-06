@@ -55,7 +55,6 @@ QColor MainWindow::darkColor = 0x413c56;
 QColor MainWindow::sidePanelColorDark = 0x100e29;
 QColor MainWindow::sidePanelColorLight = 0xA6A8AF;
 
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -207,7 +206,7 @@ MainWindow::MainWindow(QWidget *parent)
     pageTitle->setAlignment(Qt::AlignLeft);
     pageTitle->setStyleSheet("QLabel{font-size: 30px;}");
 
-    moonWidget = new MoonWidget(this);
+    moonWidget = new MoonWidget(/*this*/);
     moonWidget->setFixedSize(80,80);
     moonWidget->resizeImage();
 
@@ -215,22 +214,21 @@ MainWindow::MainWindow(QWidget *parent)
     auto secondRowLayout = new QHBoxLayout;
 //    secondRowLayout->addWidget(pageTitle, 0, Qt::AlignLeft | Qt::AlignHCenter);
     secondRowLayout->addStretch();
-    secondRowLayout->addWidget(moonWidget);
+//    secondRowLayout->addWidget(moonWidget);
     secondRowLayout->setContentsMargins(0,0,0,0);
 
     // Adding layouts and widgets to the main layout
     layout->addLayout(topRowLayout);
     layout->addLayout(secondRowLayout);
-    layout->addWidget(DreamListWidget::self(), 1);
+    layout->addWidget(DreamListWidget::self());
     layout->addStretch();
     layout->addWidget(AudioRecorderWidget::self());
 
     auto margins = layout->contentsMargins();
     margins.setTop(0);
+    margins.setRight(0);
+    margins.setLeft(20);
     layout->setContentsMargins(margins);
-
-    layout->setAlignment(DreamListWidget::self(), Qt::AlignHCenter);
-    layout->setAlignment(AudioRecorderWidget::self(), Qt::AlignHCenter);
 
     loadSettings();
 }
@@ -459,6 +457,7 @@ void MainWindow::loadSettings()
         // cache the side panel widgets proper geometry
         SidePanel::self()->saveOpenChildWidgetGeometry();
 #endif
+
     });
 
     settingsLoaded = true;
@@ -466,20 +465,29 @@ void MainWindow::loadSettings()
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
-    // allow widgets to paint their background color over the safe areas
-    if (obj == this && event->type() == QEvent::Show) {
-        appMargins = this->contentsMargins();
-
-        // this lets the central widget paint the safe area
-        // we need to manually enforce the safe area
-        setWindowFlag(Qt::MaximizeUsingFullscreenGeometryHint,true);
-        setAttribute(Qt::WA_ContentsMarginsRespectsSafeArea,false);
-
-        this->updateGeometry();
-
-        centralWidget->setContentsMargins(appMargins);
-        fullDreamWidget->setContentsMargins(appMargins);
+    // prevent the palette from being changed when switching apps
+    if (obj == this && event->type() == QEvent::ApplicationPaletteChange) {
+        setBackgroundColor(isDarkMode ? darkColor : lightColor);
     }
+
+    // allow widgets to paint their background color over the safe areas
+#if defined(Q_OS_IOS)
+    if (obj == this && event->type() == QEvent::Show) {
+        if (appMargins.isNull()) {
+            appMargins = this->contentsMargins();
+
+            // this lets the central widget paint the safe area
+            // we need to manually enforce the safe area
+            setWindowFlag(Qt::MaximizeUsingFullscreenGeometryHint,true);
+            setAttribute(Qt::WA_ContentsMarginsRespectsSafeArea,false);
+
+            this->updateGeometry();
+
+            centralWidget->setContentsMargins(appMargins);
+            fullDreamWidget->setContentsMargins(appMargins);
+        }
+    }
+#endif
 
     // handle mobile gestures
     switch (event->type()) {
@@ -546,7 +554,6 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 {
     QMainWindow::resizeEvent(event);
     SidePanel::self()->updateSize();
-    DreamListWidget::self()->updateSize();
 }
 
 

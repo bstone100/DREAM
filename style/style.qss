@@ -82,8 +82,6 @@ QScrollArea {
 
 DreamListWidget {
     background-color: transparent;
-    border: none;
-    border-top: 1px solid #645D6B;
 }
 
 QListView::item {
@@ -114,6 +112,9 @@ DreamListWidgetItem {
     border-bottom: 1px solid #645D6B;
     padding: 15px;
 }
+DreamListWidgetItem#topItem {
+    border-top: 1px solid #645D6B;
+}
 
 DreamListWidgetItem:pressed {
     background: #645D6B;
@@ -124,12 +125,12 @@ DreamListWidgetItem:checked {
 }
 
 DreamListWidgetItem QLabel#titleLabel {
-    font-size: 13px; /* Larger font size for the title */
+    font-size: 14px; /* Larger font size for the title */
     font-weight: bold; /* Bold font for the title */
 }
 
 DreamListWidgetItem QLabel#dateLabel, DreamListWidgetItem QLabel#lengthLabel {
-    font-size: 10px; /* Smaller font size for date and length */
+    font-size: 11px; /* Smaller font size for date and length */
     color: #DBD0B3;
 }
 

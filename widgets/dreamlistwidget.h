@@ -16,7 +16,6 @@ public:
     static DreamListWidget *self();
     void updateDreams();
     void uncheckItemWidgets();
-    void updateSize();
 
     DreamListWidgetItem *getDreamItem(const QString &dreamID);
 

@@ -43,20 +43,9 @@ AudioRecorderWidget::AudioRecorderWidget(QWidget *parent)
 
     // Layout management
     QVBoxLayout *layout = new QVBoxLayout(this);
-    layout->addWidget(waveformWidget);
-    layout->addWidget(transcriptTextEdit);
-
-//    auto hLayout = new QHBoxLayout;
-////    hLayout->addStretch();
-//    QSpacerItem *s1 = new QSpacerItem();
-//    hLayout->addWidget(recordButton);
-//    hLayout->addStretch();
-    layout->addWidget(recordButton);
-//    layout->addLayout(hLayout);
-
-    layout->setAlignment(waveformWidget, Qt::AlignHCenter);
-    layout->setAlignment(transcriptTextEdit, Qt::AlignHCenter);
-    layout->setAlignment(recordButton, Qt::AlignHCenter | Qt::AlignBottom);
+    layout->addWidget(waveformWidget, 0, Qt::AlignHCenter);
+    layout->addWidget(transcriptTextEdit, 0, Qt::AlignHCenter);
+    layout->addWidget(recordButton, 0, Qt::AlignHCenter | Qt::AlignBottom);
 
     setLayout(layout);
 }

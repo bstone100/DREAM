@@ -43,9 +43,11 @@ void DreamListWidget::updateDreams() {
     this->clear();
     idToItemMap.clear();
 
-    // Get all dreams
+    // reverse sort (newest created at top)
     QList<Dream> dreams = DreamManager::self()->getAllDreams();
     std::sort(dreams.rbegin(), dreams.rend());
+
+    DreamListWidgetItem *firstItem = NULL;
 
     // Iterate over each dream and create a new list item widget
     foreach (auto dream, dreams) {
@@ -54,6 +56,11 @@ void DreamListWidget::updateDreams() {
         // Create the custom list item widget
         DreamListWidgetItem *itemWidget = new DreamListWidgetItem(dream.id);
         idToItemMap.insert(dream.id, itemWidget);
+
+        if (!firstItem) {
+            firstItem = itemWidget;
+            firstItem->setObjectName("topItem"); // for qss
+        }
 
         connect(itemWidget, &DreamListWidgetItem::clicked, this, [=]{
             emit dreamClicked(dream.id);
@@ -76,12 +83,6 @@ void DreamListWidget::uncheckItemWidgets()
     foreach (auto itemWidget, idToItemMap) {
         itemWidget->setChecked(false);
     }
-}
-
-void DreamListWidget::updateSize()
-{
-    int width = MainWindow::self()->width() * .95;
-    setFixedWidth(width);
 }
 
 DreamListWidgetItem *DreamListWidget::getDreamItem(const QString &dreamID)
