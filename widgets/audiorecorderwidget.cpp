@@ -47,7 +47,11 @@ AudioRecorderWidget::AudioRecorderWidget(QWidget *parent)
     layout->addWidget(transcriptTextEdit, 0, Qt::AlignHCenter);
     layout->addWidget(recordButton, 0, Qt::AlignHCenter | Qt::AlignBottom);
 
+
     setLayout(layout);
+
+    silenceTimer.setSingleShot(true);
+    silenceTimer.setInterval(2000);
 }
 
 AudioRecorderWidget* AudioRecorderWidget::self() {
@@ -84,9 +88,6 @@ void AudioRecorderWidget::handleTranscriptionUpdated(QString text)
 //    if (!AudioTranscriptionManager::self()->isRecording()) return;
 
     text = text.trimmed();
-    if (text == "you" || text == "." || text == "You" || text == "♪♪") {
-        text.clear(); // avoid showing common hallucinations of silence
-    }
 
     if (!text.isEmpty()) {
         text[0] = text[0].toUpper();
@@ -95,6 +96,7 @@ void AudioRecorderWidget::handleTranscriptionUpdated(QString text)
     if (transcriptionCurrent == text) {
         return;
     }
+
     transcriptionCurrent = text;
 
     transcriptTextEdit->setTextBetter(transcriptionBeginning + transcriptionCurrent);
@@ -152,6 +154,18 @@ int AudioRecorderWidget::getCurrentTranscriptionWordCount()
     static QRegularExpression regex("\\W+");
     QStringList words = transcriptTextEdit->toPlainText().split(regex, Qt::SkipEmptyParts);
     return words.count();
+}
+
+QString AudioRecorderWidget::getFirstWord(QString text)
+{
+    // Split the text by any sequence of non-word characters
+    static QRegularExpression regex("\\W+");
+    QStringList words = text.split(regex, Qt::SkipEmptyParts);
+    if (words.size() > 0) {
+        return words.at(0);
+    } else {
+        return "";
+    }
 }
 
 

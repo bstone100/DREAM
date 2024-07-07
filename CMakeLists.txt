@@ -29,10 +29,6 @@ if(APPLE)
         "${CMAKE_CURRENT_SOURCE_DIR}/images/dream.icns"
         "${CMAKE_CURRENT_SOURCE_DIR}/iOS/LaunchScreen.storyboard"
         "${CMAKE_CURRENT_SOURCE_DIR}/iOS/AppIconSet.xcassets"
-        "${CMAKE_CURRENT_SOURCE_DIR}/whisper.cpp/models/ggml-small.en-q5_1.bin"
-        "${CMAKE_CURRENT_SOURCE_DIR}/whisper.cpp/models/ggml-small.en-encoder.mlmodelc"
-        "${CMAKE_CURRENT_SOURCE_DIR}/whisper.cpp/ggml-metal.metal"
-        "${CMAKE_CURRENT_SOURCE_DIR}/whisper.cpp/ggml-common.h"
     )
 endif()
 
@@ -51,9 +47,6 @@ endif()
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network Multimedia Svg Location Positioning)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network Multimedia Svg Location Positioning)
-
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "Force static libraries" FORCE)
-add_subdirectory(whisper.cpp)
 
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -96,15 +89,15 @@ if(APPLE)
         target_sources(DreamRecorder PRIVATE
             iOS/hapticfeedbackhelper.mm iOS/hapticfeedback.h
             iOS/DarkModeDetector.h iOS/DarkModeDetector.mm
-            audio/whisperinterface.h audio/whisperinterface.mm
             audio/audiotranscriptionmanager.h audio/audiotranscriptionmanager.cpp
+            audio/speechrecognizer.h audio/speechrecognizer.mm
             ${RESOURCE_ASSETS}
         )
     else() # Assuming macOS
         target_sources(DreamRecorder PRIVATE
             macOS/MacThemeDetector.h macOS/MacThemeDetector.mm
-            audio/whisperinterface.h audio/whisperinterface.mm
             audio/audiotranscriptionmanager.h audio/audiotranscriptionmanager.cpp
+            audio/speechrecognizer.h audio/speechrecognizer.mm
             ${RESOURCE_ASSETS}
         )
     endif()
@@ -125,6 +118,7 @@ endif()
 
 if(APPLE)
     find_library(AVFOUNDATION_FRAMEWORK AVFoundation)
+    find_library(SPEECH_FRAMEWORK Speech)
     find_library(COREAUDIO_FRAMEWORK CoreAudio)
     find_library(AUDIOTOOLBOX_FRAMEWORK AudioToolbox)
     find_library(USER_NOTIFICATIONS_FRAMEWORK UserNotifications)
@@ -138,9 +132,9 @@ target_link_libraries(DreamRecorder PRIVATE
     Qt${QT_VERSION_MAJOR}::Svg
     Qt${QT_VERSION_MAJOR}::Location
     Qt${QT_VERSION_MAJOR}::Positioning
-    whisper
     ${UIKIT_LIBRARY}
     ${AVFOUNDATION_FRAMEWORK}
+    ${SPEECH_FRAMEWORK}
     ${COREAUDIO_FRAMEWORK}
     ${AUDIOTOOLBOX_FRAMEWORK}
     ${USER_NOTIFICATIONS_FRAMEWORK}

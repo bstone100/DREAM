@@ -6,9 +6,10 @@
 #include "../mainwindow.h"
 #include "../widgets/waveformwidget.h"
 #include "../widgets/audiorecorderwidget.h"
+#include "../libraries/easing.h"
 
 // android and others will have equivalent file
-#include "whisperinterface.h"
+#include "speechrecognizer.h"
 
 AudioTranscriptionManager *AudioTranscriptionManager::singleton = NULL;
 
@@ -16,7 +17,6 @@ AudioTranscriptionManager::AudioTranscriptionManager() {
     if (!singleton) {
         singleton = this;
     }
-    setupAudioCapture();
 
     updateLevelTimer.setSingleShot(false);
     updateLevelTimer.setInterval(30);
@@ -56,7 +56,7 @@ void AudioTranscriptionManager::start() {
     }
 #endif
 
-    startAudioCapture();
+    startRecording();
     recordingTime = 0;
     updateLevelTimer.start();
     AudioRecorderWidget::self()->handleRecordingStarted();
@@ -66,12 +66,7 @@ void AudioTranscriptionManager::stop() {
     MainWindow::self()->sendChat();
     AudioRecorderWidget::self()->handleRecordingFinished();
     updateLevelTimer.stop();
-    stopAudioCapture();
-}
-
-bool AudioTranscriptionManager::isRecording()
-{
-    return isCapturing();
+    stopRecording();
 }
 
 void AudioTranscriptionManager::updateLevel()
@@ -80,6 +75,9 @@ void AudioTranscriptionManager::updateLevel()
         recordingTime += updateLevelTimer.interval();
     }
     float level = getCurrentLevel();
+    // stretch audio
+    level *= 3;
+    level = getEasedProgress(EaseInOutSine, level);
     AudioRecorderWidget::self()->getWaveformWidget()->addLevel(level);
 }
 

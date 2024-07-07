@@ -32,6 +32,7 @@ public:
     void handleRecordingFinished();
 
     int getCurrentTranscriptionWordCount();
+    QString getFirstWord(QString text);
 
 protected:
     explicit AudioRecorderWidget(QWidget *parent = nullptr);
@@ -42,6 +43,8 @@ private:
     RecordButton *recordButton = NULL;
     ResizingTextEdit *transcriptTextEdit = NULL;
     WaveformWidget *waveformWidget = NULL;
+
+    QTimer silenceTimer;
 
     QString transcriptionBeginning;
     QString transcriptionCurrent;

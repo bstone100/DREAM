@@ -15,8 +15,6 @@ public:
     void start();
     void stop();
 
-    bool isRecording();
-
     int getRecordingTime() const;
 
 signals:

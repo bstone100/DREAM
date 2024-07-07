@@ -224,6 +224,7 @@ MainWindow::MainWindow(QWidget *parent)
     layout->addStretch();
     layout->addWidget(AudioRecorderWidget::self());
 
+
     auto margins = layout->contentsMargins();
     margins.setTop(0);
     margins.setRight(0);
