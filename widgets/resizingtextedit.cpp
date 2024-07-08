@@ -2,6 +2,7 @@
 #include <QFontMetrics>
 #include "QAbstractTextDocumentLayout"
 #include "QScroller"
+#include "QtCore/qtimer.h"
 #include "QtWidgets/qscrollbar.h"
 
 ResizingTextEdit::ResizingTextEdit(QWidget *parent) : QTextEdit(parent) {
@@ -60,7 +61,7 @@ void ResizingTextEdit::setMinHeight(int newMinHeight)
     updateHeight();
 }
 
-void ResizingTextEdit::setTextBetter(const QString &text)
+void ResizingTextEdit::setTextBetter(const QString &text, Qt::Alignment alignment)
 {
     // Save the current scroll position and determine if we are at the bottom
     QScrollBar *scrollBar = verticalScrollBar();
@@ -68,6 +69,7 @@ void ResizingTextEdit::setTextBetter(const QString &text)
     int scrollPos = scrollBar->value();
 
     setText(text);
+    setAlignment(alignment);
 
     // Restore the scroll position or scroll to the bottom if we were at the bottom
     if (isAtBottom) {
@@ -75,6 +77,8 @@ void ResizingTextEdit::setTextBetter(const QString &text)
     } else {
         scrollBar->setValue(scrollPos);
     }
+
+    QTimer::singleShot(5, this, &ResizingTextEdit::updateHeight);
 }
 
 bool ResizingTextEdit::event(QEvent *e)

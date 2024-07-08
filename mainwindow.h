@@ -76,6 +76,8 @@ public:
     void expandFullDreamWidget();
     void collapseFullDreamWidget();
 
+    QWidget *getCentralWidget() const;
+
 signals:
     void backgroundColorChanged();
 

@@ -5,6 +5,7 @@
 #include <QVBoxLayout>
 #include <QScrollArea>
 #include "QListWidget"
+#include "QScroller"
 
 class DreamListWidgetItem;
 
@@ -32,6 +33,8 @@ private:
     static DreamListWidget *singleton;
 
     QMap<QString, DreamListWidgetItem *> idToItemMap;
+
+    QScroller *scroller;
 };
 
 #endif // DREAMLISTWIDGET_H

@@ -8,6 +8,7 @@
 #include <QVBoxLayout>
 
 class SvgButton;
+class ResizingTextEdit;
 
 class FullDreamWidget : public QWidget {
     Q_OBJECT
@@ -32,13 +33,13 @@ private:
     SvgButton *heartButton;
     SvgButton *trashButton;
 
-    QLabel *titleLabel;
+    ResizingTextEdit *titleTextEdit;
     QLabel *dateTimeLocationLabel;
 
     QCheckBox *nightmareCheckBox;
     QCheckBox *lucidCheckBox;
 
-    QLabel *transcriptLabel;
+    ResizingTextEdit *transcriptTextEdit;
 
     QVBoxLayout *mainLayout;
 

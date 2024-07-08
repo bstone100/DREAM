@@ -17,7 +17,7 @@ public:
     int getMinHeight() const;
     void setMinHeight(int newMinHeight);
 
-    void setTextBetter(const QString &text);
+    void setTextBetter(const QString &text, Qt::Alignment alignment = Qt::AlignLeft);
 
 protected:
     bool event(QEvent *e) override;

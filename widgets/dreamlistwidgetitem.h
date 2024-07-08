@@ -13,6 +13,8 @@ public:
 
     QString getDreamID() const;
 
+    QSize sizeHint() const override;
+
 private:
     QString dreamID;
 

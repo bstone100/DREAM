@@ -39,9 +39,14 @@ DreamListWidgetItem::DreamListWidgetItem(const QString &dreamID, QWidget *parent
 
     // Add layouts to the main layout
     mainLayout->addLayout(topLayout);
+    mainLayout->addSpacing(5);
     mainLayout->addLayout(bottomLayout);
 
-    mainLayout->setContentsMargins(1,7,14,9);
+    mainLayout->setSpacing(0);
+    mainLayout->setContentsMargins(1,13,16,13);
+
+    setMinimumHeight(65);
+
 
     setAttribute(Qt::WA_StyledBackground);
 
@@ -52,6 +57,12 @@ DreamListWidgetItem::DreamListWidgetItem(const QString &dreamID, QWidget *parent
 QString DreamListWidgetItem::getDreamID() const
 {
     return dreamID;
+}
+
+QSize DreamListWidgetItem::sizeHint() const
+{
+    QSize hint = QPushButton::sizeHint();
+    return QSize(hint.width(), minimumHeight());
 }
 
 

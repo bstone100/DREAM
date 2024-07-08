@@ -2,6 +2,7 @@
 #define AUDIORECORDERWIDGET_H
 
 #include "QtWidgets/qgroupbox.h"
+#include "qboxlayout.h"
 #include <QWidget>
 #include <QPushButton>
 #include <QTextEdit>
@@ -34,11 +35,15 @@ public:
     int getCurrentTranscriptionWordCount();
     QString getFirstWord(QString text);
 
+    QVBoxLayout *getMainLayout() const;
+
 protected:
     explicit AudioRecorderWidget(QWidget *parent = nullptr);
 
 private:
     static AudioRecorderWidget* singleton;
+
+    QVBoxLayout *mainLayout;
 
     RecordButton *recordButton = NULL;
     ResizingTextEdit *transcriptTextEdit = NULL;

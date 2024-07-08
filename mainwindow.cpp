@@ -155,7 +155,7 @@ MainWindow::MainWindow(QWidget *parent)
     SvgButton *drawerButton = new SvgButton(this);
     drawerButton->setSvgPath(":/images/drawer.svg");
     drawerButton->setIconSize(QSize(30,30));
-    drawerButton->setFixedSize(70, 70);
+    drawerButton->setFixedSize(60, 50);
     drawerButton->setUsingAppColors(true);
 
     connect(SidePanel::self(), &SidePanel::animationStarted, drawerButton, [=]{
@@ -204,7 +204,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     QLabel *pageTitle = new QLabel("All Dreams"); // maybe change this when list filters are added
     pageTitle->setAlignment(Qt::AlignLeft);
-    pageTitle->setStyleSheet("QLabel{font-size: 30px;}");
+    pageTitle->setStyleSheet("QLabel{font-size: 35px;}");
 
     moonWidget = new MoonWidget(/*this*/);
     moonWidget->setFixedSize(80,80);
@@ -212,24 +212,24 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     auto secondRowLayout = new QHBoxLayout;
-//    secondRowLayout->addWidget(pageTitle, 0, Qt::AlignLeft | Qt::AlignHCenter);
+    secondRowLayout->addWidget(pageTitle, 0, Qt::AlignLeft | Qt::AlignHCenter);
     secondRowLayout->addStretch();
 //    secondRowLayout->addWidget(moonWidget);
     secondRowLayout->setContentsMargins(0,0,0,0);
 
+    auto titleAndListLayout = new QVBoxLayout;
+    titleAndListLayout->addLayout(secondRowLayout);
+    titleAndListLayout->addWidget(DreamListWidget::self());
+    titleAndListLayout->setContentsMargins(16,0,0,0);
+    titleAndListLayout->setSpacing(15);
+
     // Adding layouts and widgets to the main layout
     layout->addLayout(topRowLayout);
-    layout->addLayout(secondRowLayout);
-    layout->addWidget(DreamListWidget::self());
-    layout->addStretch();
+    layout->addLayout(titleAndListLayout);
     layout->addWidget(AudioRecorderWidget::self());
 
-
-    auto margins = layout->contentsMargins();
-    margins.setTop(0);
-    margins.setRight(0);
-    margins.setLeft(20);
-    layout->setContentsMargins(margins);
+    layout->setSpacing(0);
+    layout->setContentsMargins(0,0,0,0);
 
     loadSettings();
 }
@@ -484,8 +484,11 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 
             this->updateGeometry();
 
-            centralWidget->setContentsMargins(appMargins);
+            QMargins centralWidgetMargins = appMargins;
+            centralWidgetMargins.setBottom(0);
+            centralWidget->setContentsMargins(centralWidgetMargins);
             fullDreamWidget->setContentsMargins(appMargins);
+            AudioRecorderWidget::self()->getMainLayout()->addSpacing(appMargins.bottom());
         }
     }
 #endif
@@ -979,7 +982,7 @@ void MainWindow::expandFullDreamWidget()
     fullDreamWidgetAnimation->setEndValue(mainRect);
 
     // Set the duration and easing curve for the animations
-    const int duration = 300;
+    const int duration = 400;
     centralWidgetAnimation->setDuration(duration);
     fullDreamWidgetAnimation->setDuration(duration);
     backgroundColorAnimation->setDuration(duration);
@@ -987,9 +990,17 @@ void MainWindow::expandFullDreamWidget()
     centralWidgetAnimation->setEasingCurve(QEasingCurve::OutCubic);
     fullDreamWidgetAnimation->setEasingCurve(QEasingCurve::OutCubic);
 
-    // Set the fullDreamWidget as the current widget before starting the animations
+
+    // fixes a stupid glitch
+    if (stackedWidget->currentWidget() != fullDreamWidget) {
+        setWidgetOpacity(fullDreamWidget, 0);
+    }
     stackedWidget->setCurrentWidget(fullDreamWidget);
     centralWidget->show();
+
+    connect(fullDreamWidgetAnimation, &QPropertyAnimation::valueChanged, this, [=](QVariant val){
+        setWidgetOpacity(fullDreamWidget, 1);
+    });
 
     connect(fullDreamWidgetAnimation, &QPropertyAnimation::finished, this, [this]() {
         fullDreamWidgetExpanding = false;
@@ -1044,7 +1055,7 @@ void MainWindow::collapseFullDreamWidget()
     fullDreamWidgetAnimation->setEndValue(rightRect);
 
     // Set the duration and easing curve for the animations
-    const int duration = 300;
+    const int duration = 400;
     centralWidgetAnimation->setDuration(duration);
     fullDreamWidgetAnimation->setDuration(duration);
     backgroundColorAnimation->setDuration(duration);
@@ -1074,7 +1085,10 @@ QMargins MainWindow::getAppMargins() const
     return appMargins;
 }
 
-
+QWidget *MainWindow::getCentralWidget() const
+{
+    return centralWidget;
+}
 
 
 

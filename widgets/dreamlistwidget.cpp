@@ -2,7 +2,6 @@
 #include "QPushButton"
 #include "../dream.h"
 #include "../dreammanager.h"
-#include "QScroller"
 #include "dreamlistwidgetitem.h"
 #include "../mainwindow.h"
 
@@ -11,16 +10,16 @@ DreamListWidget* DreamListWidget::singleton = nullptr;
 DreamListWidget::DreamListWidget(QWidget *parent)
     : QListWidget(parent)
 {
-    QScroller* scroller = QScroller::scroller(viewport());
+    scroller = QScroller::scroller(viewport());
 
     QScrollerProperties properties = scroller->scrollerProperties();
     properties.setScrollMetric(QScrollerProperties::DragStartDistance, 0.0);
     properties.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QVariant::fromValue(QScrollerProperties::OvershootAlwaysOn));
 
     scroller->setScrollerProperties(properties);
-    scroller->grabGesture(viewport(), QScroller::TouchGesture);
 
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+    scroller->grabGesture(viewport(), QScroller::TouchGesture);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 #endif
 
@@ -63,7 +62,11 @@ void DreamListWidget::updateDreams() {
         }
 
         connect(itemWidget, &DreamListWidgetItem::clicked, this, [=]{
-            emit dreamClicked(dream.id);
+            if (scroller->state() == QScroller::Inactive) {
+                emit dreamClicked(dream.id);
+            } else {
+                itemWidget->setChecked(false);
+            }
         });
 
         // Create a QListWidgetItem and set its size

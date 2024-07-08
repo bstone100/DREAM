@@ -4,44 +4,58 @@
 #include "../mainwindow.h"
 #include "../locationmanager.h"
 #include "QMessageBox"
+#include "resizingtextedit.h"
+
 
 FullDreamWidget::FullDreamWidget(QWidget *parent) : QWidget(parent)
 {
     backButton = new SvgButton(this);
     backButton->setSvgPath(":/images/leftArrow.svg");
     backButton->setIconSize(QSize(30,30));
-    backButton->setFixedSize(90, 50);
+    backButton->setFixedSize(60, 50);
     backButton->setUsingAppColors(true);
 
     trashButton = new SvgButton(this);
     trashButton->setSvgPath(":/images/trash.svg");
     trashButton->setIconSize(QSize(30,30));
-    trashButton->setFixedSize(50, 50);
+    trashButton->setFixedSize(60, 50);
     trashButton->setUsingAppColors(true);
 
     heartButton = new SvgButton(this);
     heartButton->setSvgPath(":/images/heart.svg");
     heartButton->setIconSize(QSize(30,30));
-    heartButton->setFixedSize(50, 50);
+    heartButton->setFixedSize(60, 50);
     heartButton->setUsingAppColors(true);
     heartButton->setCheckable(true);
     heartButton->setChecked(false);
 
     connect(trashButton, &QPushButton::clicked, this, &FullDreamWidget::handleTrashClicked);
 
-    titleLabel = new QLabel(this);
+    titleTextEdit = new ResizingTextEdit(this);
+    titleTextEdit->setStyleSheet("font-size: 25px;");
+    titleTextEdit->setAcceptRichText(false);
+    titleTextEdit->setReadOnly(true);
+    titleTextEdit->setTextInteractionFlags(Qt::NoTextInteraction);
+    titleTextEdit->setMinHeight(0);
+    titleTextEdit->setMaxHeight(100);
+    titleTextEdit->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+
+
     dateTimeLocationLabel = new QLabel(this);
+    dateTimeLocationLabel->setStyleSheet("font-size: 13px; color: #DBD0B3;");
+    //    dateTimeLocationLabel->setWordWrap(true);
 
     nightmareCheckBox = new QCheckBox("Nightmare", this);
     lucidCheckBox = new QCheckBox("Lucid", this);
 
-    transcriptLabel = new QLabel(this);
+    transcriptTextEdit = new ResizingTextEdit(this);
+    transcriptTextEdit->setAcceptRichText(false);
+    transcriptTextEdit->setReadOnly(true);
+    transcriptTextEdit->setTextInteractionFlags(Qt::NoTextInteraction);
+    transcriptTextEdit->setMinHeight(60);
+    transcriptTextEdit->setMaxHeight(400);
+    transcriptTextEdit->setStyleSheet("font-size: 14px;");
 
-    titleLabel->setStyleSheet("font-size: 25px;");
-    dateTimeLocationLabel->setStyleSheet("font-size: 13px; color: #DBD0B3;");
-
-//    dateTimeLocationLabel->setWordWrap(true);
-    transcriptLabel->setWordWrap(true);
 
     connect(lucidCheckBox, &QCheckBox::clicked, this, &FullDreamWidget::handleWidgetInteraction);
     connect(nightmareCheckBox, &QCheckBox::clicked, this, &FullDreamWidget::handleWidgetInteraction);
@@ -57,17 +71,20 @@ FullDreamWidget::FullDreamWidget(QWidget *parent) : QWidget(parent)
     hBox->addWidget(nightmareCheckBox);
     hBox->addWidget(lucidCheckBox);
 
+    auto vBox = new QVBoxLayout;
+    vBox->addWidget(titleTextEdit, 0, Qt::AlignHCenter);
+    vBox->addWidget(dateTimeLocationLabel, 0, Qt::AlignHCenter);
+    vBox->addLayout(hBox);
+    vBox->addWidget(transcriptTextEdit);
+    vBox->addStretch();
+    vBox->setContentsMargins(16,0,16,0);
+
+    vBox->setAlignment(hBox, Qt::AlignCenter);
+
     mainLayout = new QVBoxLayout(this);
     mainLayout->addLayout(topH);
-    mainLayout->addWidget(titleLabel, 0, Qt::AlignHCenter);
-    mainLayout->addWidget(dateTimeLocationLabel, 0, Qt::AlignHCenter);
-    mainLayout->addSpacing(20);
-    mainLayout->addLayout(hBox);
-    mainLayout->addSpacing(20);
-    mainLayout->addWidget(transcriptLabel);
-    mainLayout->addStretch();
-
-    mainLayout->setAlignment(hBox, Qt::AlignCenter);
+    mainLayout->addLayout(vBox);
+    mainLayout->setContentsMargins(0,0,0,0);
 
     setLayout(mainLayout);
 
@@ -90,7 +107,7 @@ void FullDreamWidget::updateWidget()
 
     if (!currentDream.isValid()) return;
 
-    titleLabel->setText(currentDream.title);
+    titleTextEdit->setTextBetter(currentDream.title, Qt::AlignHCenter);
 
     QString date = currentDream.recordingDateTime.toString("MMM d, yyyy");
     QString time = currentDream.recordingDateTime.toString("h:mm A");
@@ -109,9 +126,9 @@ void FullDreamWidget::updateWidget()
     updateHeart();
 
     if (currentDream.isGenerated) {
-        transcriptLabel->setText(currentDream.revisedTranscript);
+        transcriptTextEdit->setTextBetter(currentDream.revisedTranscript);
     } else {
-        transcriptLabel->setText(currentDream.originalTranscript);
+        transcriptTextEdit->setTextBetter(currentDream.originalTranscript);
     }
 }
 

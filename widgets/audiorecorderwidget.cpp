@@ -13,12 +13,6 @@ AudioRecorderWidget* AudioRecorderWidget::singleton = nullptr;
 AudioRecorderWidget::AudioRecorderWidget(QWidget *parent)
     : QGroupBox(parent)
 {
-    // Set widget background and shape
-//    setStyleSheet("background-color: #142539; border-radius: 10px;");
-//    setAttribute(Qt::WA_StyledBackground);
-
-//    setFixedWidth(300);
-
     // Initialize components
     recordButton = new RecordButton(this);
     recordButton->setFixedSize(60, 60);
@@ -42,16 +36,21 @@ AudioRecorderWidget::AudioRecorderWidget(QWidget *parent)
     connect(AudioTranscriptionManager::self(), &AudioTranscriptionManager::timeLimitReached, this, &AudioRecorderWidget::handleTimeLimitReached);
 
     // Layout management
-    QVBoxLayout *layout = new QVBoxLayout(this);
-    layout->addWidget(waveformWidget, 0, Qt::AlignHCenter);
-    layout->addWidget(transcriptTextEdit, 0, Qt::AlignHCenter);
-    layout->addWidget(recordButton, 0, Qt::AlignHCenter | Qt::AlignBottom);
+    mainLayout = new QVBoxLayout(this);
+    mainLayout->addWidget(waveformWidget, 0, Qt::AlignHCenter);
+    mainLayout->addWidget(transcriptTextEdit, 0, Qt::AlignHCenter);
+    mainLayout->addWidget(recordButton, 0, Qt::AlignHCenter | Qt::AlignBottom);
 
 
-    setLayout(layout);
+    setLayout(mainLayout);
 
     silenceTimer.setSingleShot(true);
     silenceTimer.setInterval(2000);
+}
+
+QVBoxLayout *AudioRecorderWidget::getMainLayout() const
+{
+    return mainLayout;
 }
 
 AudioRecorderWidget* AudioRecorderWidget::self() {

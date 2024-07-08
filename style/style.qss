@@ -117,7 +117,7 @@ DreamListWidgetItem#topItem {
 }
 
 DreamListWidgetItem:pressed {
-    background: #645D6B;
+
 }
 
 DreamListWidgetItem:checked {
@@ -125,12 +125,11 @@ DreamListWidgetItem:checked {
 }
 
 DreamListWidgetItem QLabel#titleLabel {
-    font-size: 14px; /* Larger font size for the title */
-    font-weight: bold; /* Bold font for the title */
+    font-size: 15px;
 }
 
 DreamListWidgetItem QLabel#dateLabel, DreamListWidgetItem QLabel#lengthLabel {
-    font-size: 11px; /* Smaller font size for date and length */
+    font-size: 13px; /* Smaller font size for date and length */
     color: #DBD0B3;
 }
 
@@ -139,7 +138,11 @@ FullDreamWidget {
 }
 
 AudioRecorderWidget {
-    background: transparent;
+    background-color: #353146;
+    border-radius: 15px;
+    border: 0px;
+    margin:0px;
+    padding:0px;
 }
 
 
