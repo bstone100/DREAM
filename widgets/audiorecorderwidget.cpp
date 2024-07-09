@@ -125,7 +125,13 @@ void AudioRecorderWidget::handleRecordingStarted()
 {
     recordButton->handleRecordingStateChanged(true);
 
-    MainWindow::self()->fadeInWidgets({waveformWidget, transcriptTextEdit}, 500);
+    auto anim = animateHeightChange(expandedHeight, 300);
+
+    connect(anim, &QPropertyAnimation::stateChanged, this, [=](QAbstractAnimation::State newState, QAbstractAnimation::State oldState){
+        if (newState == QAbstractAnimation::Stopped) {
+            MainWindow::self()->fadeInWidgets({waveformWidget, transcriptTextEdit}, 200);
+        }
+    });
 }
 
 void AudioRecorderWidget::handleRecordingFinished()
@@ -135,15 +141,27 @@ void AudioRecorderWidget::handleRecordingFinished()
 
     recordButton->handleRecordingStateChanged(false);
 
-    // fade out and hide once faded
-    auto anim = MainWindow::self()->fadeOutWidget(waveformWidget, 500);
-    MainWindow::self()->fadeOutWidget(transcriptTextEdit, 500);
-    connect(anim, &QPropertyAnimation::finished, this, [&]{
-        transcriptTextEdit->clear();
-        waveformWidget->clearLevels();
+    // Set the minimum height to the current height to prevent layout shrinkage
+    setMinimumHeight(this->height());
 
-        waveformWidget->hide();
-        transcriptTextEdit->hide();
+    auto anim = MainWindow::self()->fadeOutWidgets({waveformWidget, transcriptTextEdit}, 200);
+
+    connect(anim, &QPropertyAnimation::stateChanged, this, [=](QAbstractAnimation::State newState, QAbstractAnimation::State oldState){
+        if (newState == QAbstractAnimation::Stopped) {
+            transcriptTextEdit->clear();
+            waveformWidget->clearLevels();
+
+            waveformWidget->hide();
+            transcriptTextEdit->hide();
+
+            // Animate the height change after hiding the widgets
+            auto heightAnim = animateHeightChange(collapsedHeight, 300);
+
+            // Reset the minimum height after the animation
+            connect(heightAnim, &QPropertyAnimation::finished, this, [=]{
+                setMinimumHeight(0);
+            });
+        }
     });
 }
 
@@ -166,6 +184,28 @@ QString AudioRecorderWidget::getFirstWord(QString text)
         return "";
     }
 }
+
+QPropertyAnimation *AudioRecorderWidget::animateHeightChange(int newHeight, int duration, QEasingCurve easingCurve)
+{
+    QPropertyAnimation *animation = new QPropertyAnimation(this, "minimumHeight");
+    animation->setDuration(duration);
+    animation->setEasingCurve(easingCurve);
+    animation->setStartValue(this->height());
+    animation->setEndValue(newHeight);
+    animation->start(QAbstractAnimation::DeleteWhenStopped);
+    return animation;
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 

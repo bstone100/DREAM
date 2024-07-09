@@ -1,6 +1,8 @@
 #ifndef AUDIORECORDERWIDGET_H
 #define AUDIORECORDERWIDGET_H
 
+#include "QtCore/qeasingcurve.h"
+#include "QtCore/qpropertyanimation.h"
 #include "QtWidgets/qgroupbox.h"
 #include "qboxlayout.h"
 #include <QWidget>
@@ -54,6 +56,9 @@ private:
     QString transcriptionBeginning;
     QString transcriptionCurrent;
 
+    int collapsedHeight = 84;
+    int expandedHeight = 234;
+    QPropertyAnimation *animateHeightChange(int newHeight, int duration, QEasingCurve easingCurve = QEasingCurve::Linear);
 };
 
 #endif // AUDIORECORDERWIDGET_H

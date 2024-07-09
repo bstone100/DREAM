@@ -30,6 +30,7 @@ struct Dream {
 
     // meta
     bool isGenerated = false; // the parent dream keeps the original transcript, child dreams remove it
+    bool displayOriginal = false; // display original dream in certain cases (generation too slow or fails)
 
     // toggleable
     bool isFavorited = false;

@@ -131,24 +131,13 @@ MainWindow::MainWindow(QWidget *parent)
     // hard code this
     apiKey = "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";
 
-    // chat request
-    chatRequest = new OpenAIRequest();
-    chatRequest->setAccessToken(apiKey);
-
-
-    QJsonObject systemPrompt;
-
-    systemPrompt["prompt"] = "You are part of an app called Dream Recorder. The app lets the user transcribe a description of the dreams they had last night. "
-                             "Your job is to parse the user's dreams and make the correct tool calls."
-                             "Only use tools that you have been given access to."
-                             "If the user didn't describe any dreams then don't respond at all, just leave your response blank.";
-
-    chatRequest->addMessage(new OpenAIMessage(systemPrompt, OpenAIMessage::System));
+    systemPrompt = "You are part of an app called Dream Recorder. The app lets the user transcribe a description of the dreams they had last night. "
+                   "Your job is to parse the user's dreams and make the correct tool calls."
+                   "Only use tools that you have been given access to."
+                   "If the user didn't describe any dreams then don't respond at all, just leave your response blank.";
 
 
     connect(LocationManager::self(), &LocationManager::locationObtained, this, &MainWindow::handleLocationObtained);
-    connect(chatRequest, &OpenAIRequest::requestFinished, this, &MainWindow::handleGenerationFinished);
-
 
 
     // side panel
@@ -202,7 +191,7 @@ MainWindow::MainWindow(QWidget *parent)
     topRowLayout->addStretch();
     topRowLayout->setContentsMargins(0,0,0,0);
 
-    QLabel *pageTitle = new QLabel("All Dreams"); // maybe change this when list filters are added
+    QLabel *pageTitle = new QLabel("Journal"); // maybe change this when list filters are added
     pageTitle->setAlignment(Qt::AlignLeft);
     pageTitle->setStyleSheet("QLabel{font-size: 35px;}");
 
@@ -269,51 +258,112 @@ void MainWindow::sendChat()
     QString dayName = locale.dayName(dream.recordingDateTime.date().dayOfWeek(), QLocale::LongFormat);
     dream.title = QString("%1's Dream").arg(dayName);
 
-    newOriginalDreamID = dream.id;
-
     DreamManager::self()->insertDream(dream);
-    LocationManager::self()->requestUserLocation();
+    LocationManager::self()->requestUserLocation(); // associate this with the id
 
-    OpenAIMessage *userMessage = new OpenAIMessage("", OpenAIMessage::Role::User);
-    userMessage->setUserMessage(message);
-    userMessage->addTimestamp();
 
-    chatRequest->setModel("gpt-4o");
+    OpenAIRequest *request = new OpenAIRequest();
+    request->setAccessToken(apiKey);
+    request->setModel("gpt-4o");
+    request->setDreamID(dream.id);
 
-    chatRequest->addMessage(userMessage);
-    chatRequest->execute();
+    request->addMessage(new OpenAIMessage(systemPrompt, OpenAIMessage::System));
+    request->addMessage(new OpenAIMessage(message, OpenAIMessage::User));
+
+    connect(request, &OpenAIRequest::timerTimeout, this, &MainWindow::handleGenerationTimerTimeout);
+    connect(request, &OpenAIRequest::requestFinished, this, &MainWindow::handleGenerationFinished);
+    connect(request, &OpenAIRequest::requestError, this, &MainWindow::handleGenerationError);
+
+    chatRequests.append(request);
+    request->execute();
 }
 
-void MainWindow::handleLocationObtained(QGeoAddress location)
+// if we haven't gotten anything back in 1000 ms
+// display the original dream (for the user's sake)
+void MainWindow::handleGenerationTimerTimeout()
 {
-    Dream dream = DreamManager::self()->getDream(newOriginalDreamID);
+    qDebug() << "handleGenerationTimerTimeout";
+    OpenAIRequest *request = qobject_cast<OpenAIRequest *>(sender());
+    if (!request) return;
+
+    Dream dream = DreamManager::self()->getDream(request->getDreamID());
     if (!dream.isValid()) return;
 
-    dream.recordingLocation = location;
-    DreamManager::self()->insertDream(dream);
-
-    foreach (auto childID, dream.childIDs) {
-        Dream childDream = DreamManager::self()->getDream(childID);
-        childDream.recordingLocation = location;
-        DreamManager::self()->insertDream(childDream);
+    if (dream.childIDs.isEmpty()) {
+        // display the original dream
+        dream.displayOriginal = true;
+        DreamManager::self()->insertDream(dream);
+        updateWidgets();
     }
-
-    saveSettings();
-    updateWidgets();
 }
 
-// remove the original dream if it has no children after generation
+// when generation completes
+// model has decided if the user had dreams or not
+// remove the original dream if it has no children
+// hide the original dream
 void MainWindow::handleGenerationFinished()
 {
-    chatRequest->removeAllMessagesExceptSystem();
+    qDebug() << "handleGenerationFinished";
+    OpenAIRequest *request = qobject_cast<OpenAIRequest *>(sender());
+    if (!request) return;
 
-    Dream dream = DreamManager::self()->getDream(newOriginalDreamID);
+    Dream dream = DreamManager::self()->getDream(request->getDreamID());
     if (!dream.isValid()) return;
 
     if (dream.childIDs.isEmpty()) {
         DreamManager::self()->removeDream(dream);
-        updateWidgets();
+    } else {
+        dream.displayOriginal = false;
+        DreamManager::self()->insertDream(dream);
     }
+    saveSettings();
+    updateWidgets();
+
+    chatRequests.removeOne(request);
+}
+
+// make the original dream visible
+void MainWindow::handleGenerationError()
+{
+    qDebug() << "handleGenerationError";
+    OpenAIRequest *request = qobject_cast<OpenAIRequest *>(sender());
+    if (!request) return;
+
+    Dream dream = DreamManager::self()->getDream(request->getDreamID());
+    if (!dream.isValid()) return;
+
+    // implied that no children were generated
+    // display the original dream
+    dream.displayOriginal = true;
+    DreamManager::self()->insertDream(dream);
+    saveSettings();
+    updateWidgets();
+
+    chatRequests.removeOne(request);
+}
+
+// implied that each active request was made in the same location
+void MainWindow::handleLocationObtained(QGeoAddress location)
+{
+    foreach (auto request, chatRequests) {
+        if (!request) continue;
+
+        Dream dream = DreamManager::self()->getDream(request->getDreamID());
+        if (!dream.isValid()) return;
+
+        dream.recordingLocation = location;
+        DreamManager::self()->insertDream(dream);
+
+        // update child dreams (they may or may not have already generated)
+        foreach (auto childID, dream.childIDs) {
+            Dream childDream = DreamManager::self()->getDream(childID);
+            childDream.recordingLocation = location;
+            DreamManager::self()->insertDream(childDream);
+        }
+    }
+
+    saveSettings();
+    updateWidgets();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -567,7 +617,7 @@ void MainWindow::dumpJsonToFile(QJsonObject jObj, QString fileName)
     QJsonDocument jsonDoc(jObj);
 
     // Save the QJsonDocument to a file
-    QFile file(fileName);
+    QFile file(currentPath + QDir::separator() + fileName);
     if (file.open(QIODevice::WriteOnly)) {
         file.write(jsonDoc.toJson());
         file.close();
@@ -924,11 +974,6 @@ void MainWindow::exitFullDreamHandleSwipeEnd()
     } else {
         expandFullDreamWidget();
     }
-}
-
-QString MainWindow::getNewOriginalDreamID() const
-{
-    return newOriginalDreamID;
 }
 
 

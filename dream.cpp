@@ -46,6 +46,7 @@ QJsonObject Dream::toJson() const {
         {"isLucid", isLucid},
         {"similarDreams", QJsonArray::fromStringList(similarDreams)},
         {"isGenerated", isGenerated},
+        {"displayOriginal", displayOriginal},
         {"isFavorited", isFavorited}
     };
 }
@@ -93,6 +94,9 @@ void Dream::updateFromJson(const QJsonObject &obj)
     }
     if (obj.contains("isGenerated")) {
         isGenerated = obj["isGenerated"].toBool();
+    }
+    if (obj.contains("displayOriginal")) {
+        displayOriginal = obj["displayOriginal"].toBool();
     }
     if (obj.contains("isFavorited")) {
         isFavorited = obj["isFavorited"].toBool();

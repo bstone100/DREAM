@@ -36,8 +36,8 @@ private:
     ResizingTextEdit *titleTextEdit;
     QLabel *dateTimeLocationLabel;
 
-    QCheckBox *nightmareCheckBox;
-    QCheckBox *lucidCheckBox;
+    QButtonGroup *nightmareGroup;
+    QButtonGroup *lucidGroup;
 
     ResizingTextEdit *transcriptTextEdit;
 

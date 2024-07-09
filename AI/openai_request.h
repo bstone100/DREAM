@@ -2,8 +2,8 @@
 
 #include <QObject>
 #include <QNetworkAccessManager>
-#include "QtMultimedia/qmediaplayer.h"
 #include "openai_message.h"
+#include "QTimer"
 
 
 class AudioLevelCalculator;
@@ -80,12 +80,18 @@ public:
 
     void saveMessagesToFile() const;
 
+    QString getDreamID() const;
+    void setDreamID(const QString &newDreamID);
+
 signals:
     // Signal emitted when the request is finished successfully
     void requestFinished(const QString& generatedText);
 
     // Signal emitted when the request encounters an error
     void requestError(const QString& errorString);
+
+    // emits if generation takes longer than interval
+    void timerTimeout();
 
     void generatedTextChanged();
     void errorStringChanged();
@@ -111,15 +117,15 @@ private:
     QString m_responseFormat;
     double  m_speed;
 
+    QTimer generationTimer; // check if generation takes longer than interval
+    QString dreamID; // the original dream object is created in advance
+
     void sendChatCompletionsRequest();
     void sendAudioTranscriptionsRequest();
     void sendAudioTranscriptionsRequestLocal();
     void sendAudioSpeechRequest();
 
     void playAudio(const QByteArray &audioData);
-
-    static const int MAX_SELF_RESPONSE_CALLS = 5;
-    int selfResponseCount = 0;
 };
 
 

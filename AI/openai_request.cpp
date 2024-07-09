@@ -54,6 +54,10 @@ OpenAIRequest::OpenAIRequest(QObject *parent)
 
         qDebug() << errorString;
     });
+
+    generationTimer.setInterval(500);
+    generationTimer.setSingleShot(true);
+    connect(&generationTimer, &QTimer::timeout, this, &OpenAIRequest::timerTimeout);
 }
 
 OpenAIRequest::~OpenAIRequest()
@@ -122,6 +126,7 @@ void OpenAIRequest::setSpeed(double newSpeed)
 }
 
 // Send a request to the OpenAI API
+// for this app there will be no conversations, just individual requests
 void OpenAIRequest::sendChatCompletionsRequest()
 {
     // Set up the API endpoint URL
@@ -143,12 +148,7 @@ void OpenAIRequest::sendChatCompletionsRequest()
 
 
     // insert tools to allow function calls
-    if (selfResponseCount < MAX_SELF_RESPONSE_CALLS) {
-        qDebug() << "selfResponseCount: " << selfResponseCount;
-        requestBody.insert("tools", API::getToolsJsonArray());
-    } else {
-        qDebug() << "MAX_SELF_RESPONSE_CALLS";
-    }
+    requestBody.insert("tools", API::getToolsJsonArray());
 
     QJsonArray messageArray;
     foreach (OpenAIMessage *message, m_messages) {
@@ -174,14 +174,14 @@ void OpenAIRequest::sendChatCompletionsRequest()
     QNetworkReply *reply = m_networkAccessManager->post(request, requestBodyBytes);
     m_status = RequestStatus::InProgress;
     emit statusChanged();
+    generationTimer.start();
 
     // Connect signals and slots to handle the response
     connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        generationTimer.stop();
         if (reply->error() == QNetworkReply::NoError) {
             const QByteArray responseBytes = reply->readAll();
             const QJsonDocument responseJson = QJsonDocument::fromJson(responseBytes);
-
-//            qDebug() << responseJson;
 
             // Handle the response
             const auto message = responseJson.object().value("choices").toArray().at(0).toObject().value("message").toObject();
@@ -190,24 +190,8 @@ void OpenAIRequest::sendChatCompletionsRequest()
 
             qDebug() << message;
 
-            // track how many tool calls are generated in response to previous tool calls
-            if (!tool_calls.isEmpty() && m_messages.last()->role() == OpenAIMessage::Tool) {
-                selfResponseCount++;
-            } else {
-                selfResponseCount = 0;
-            }
-
-            OpenAIMessage *assistantMessage = new OpenAIMessage(content, OpenAIMessage::Role::Assistant);
-            assistantMessage->setTool_calls(tool_calls);
-            addMessage(assistantMessage);
-
-            if (tool_calls.isEmpty()) {
-                // it's done making function calls and we have a message response
-
-                emit requestFinished(content);
-            } else {
-                API::processToolCalls(tool_calls, this);
-            }
+            API::processToolCalls(tool_calls, this);
+            emit requestFinished(content);
         } else {
             emit requestError(reply->errorString() + reply->readAll());
         }
@@ -619,6 +603,16 @@ void OpenAIRequest::saveMessagesToFile() const
     QJsonDocument doc(requestBody);
     file.write(doc.toJson());
     file.close();
+}
+
+QString OpenAIRequest::getDreamID() const
+{
+    return dreamID;
+}
+
+void OpenAIRequest::setDreamID(const QString &newDreamID)
+{
+    dreamID = newDreamID;
 }
 
 

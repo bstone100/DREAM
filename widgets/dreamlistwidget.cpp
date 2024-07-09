@@ -50,7 +50,7 @@ void DreamListWidget::updateDreams() {
 
     // Iterate over each dream and create a new list item widget
     foreach (auto dream, dreams) {
-        if (!dream.isGenerated) continue;
+        if (!dream.isGenerated && !dream.displayOriginal) continue;
 
         // Create the custom list item widget
         DreamListWidgetItem *itemWidget = new DreamListWidgetItem(dream.id);

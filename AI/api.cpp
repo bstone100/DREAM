@@ -1,5 +1,4 @@
 #include "api.h"
-#include "openai_message.h"
 #include "openai_request.h"
 #include "QDate"
 #include "QJsonObject"
@@ -84,7 +83,7 @@ void API::generateTools()
         {"function", getDreamsInRangeFunctionObject}
     };
 
-    toolList.append(APITool{&API::getDreamsInRange, getDreamsInRangeDescription});
+//    toolList.append(APITool{&API::getDreamsInRange, getDreamsInRangeDescription});
 }
 
 
@@ -107,6 +106,7 @@ APITool API::getToolByName(const QString &name)
     return APITool();
 }
 
+// this app will not have chains of responses
 void API::processToolCalls(const QJsonArray &toolCalls, OpenAIRequest *chatRequest)
 {
     if (toolCalls.isEmpty()) return;
@@ -123,6 +123,8 @@ void API::processToolCalls(const QJsonArray &toolCalls, OpenAIRequest *chatReque
         QJsonDocument doc = QJsonDocument::fromJson(argumentsStr.toUtf8());
         QJsonObject functionArgs = doc.object();
 
+        functionArgs["dreamID"] = chatRequest->getDreamID();
+
         printToolCall(functionName, functionArgs);
 
         QString functionResponse;
@@ -132,15 +134,7 @@ void API::processToolCalls(const QJsonArray &toolCalls, OpenAIRequest *chatReque
             functionResponse = functionName + " is not a valid function.";
         }
         qDebug() << functionResponse;
-
-        // append the function response to conversation
-        OpenAIMessage *toolMessage = new OpenAIMessage(functionResponse, OpenAIMessage::Role::Tool);
-        toolMessage->setTool_call_id(toolCall["id"].toString());
-        chatRequest->addMessage(toolMessage);
     }
-
-    // request that the responses be summarized or that more function calls be made
-    chatRequest->execute();
 
     MainWindow::self()->saveSettings();
 }
@@ -160,8 +154,8 @@ void API::printToolCall(const QString &name, const QJsonObject &args)
 // will maintain the original object until llm is done generating then remove it
 QString API::generateDreamData(const QJsonObject &jsonObject)
 {
-    QString parentDreamID = MainWindow::self()->getNewOriginalDreamID();
-    Dream parentDream = DreamManager::self()->getDream(parentDreamID);
+    QString dreamID = jsonObject["dreamID"].toString();
+    Dream parentDream = DreamManager::self()->getDream(dreamID);
     if (!parentDream.isValid()) {
         return "Internal error, probably not your fault.";
     }

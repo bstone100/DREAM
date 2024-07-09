@@ -69,8 +69,6 @@ public:
     static double interpolate(double startVal, double endVal, double progress);
     static void smartSetVisible(QList<QWidget *> widgets, bool visible, int duration = 500, QEasingCurve::Type curveType = QEasingCurve::Linear);
 
-    QString getNewOriginalDreamID() const;
-
     QMargins getAppMargins() const;
 
     void expandFullDreamWidget();
@@ -116,7 +114,9 @@ private:
     bool isDarkMode;
     bool isAutoTheme;
 
-    OpenAIRequest *chatRequest;
+    QString systemPrompt;
+
+    QList<OpenAIRequest *> chatRequests;
 
     // gestures
 
@@ -148,10 +148,10 @@ private:
     QPropertyAnimation *backgroundColorInterpolator = NULL;
 
     // dream
-
-    QString newOriginalDreamID;
     void handleLocationObtained(QGeoAddress location);
+    void handleGenerationTimerTimeout();
     void handleGenerationFinished();
+    void handleGenerationError();
 
     // other
     QColor backgroundColor() const {

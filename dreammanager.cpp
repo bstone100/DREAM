@@ -36,10 +36,16 @@ void DreamManager::insertDreams(const QList<Dream> &dreams)
 
 void DreamManager::removeDream(const Dream &dream)
 {
-    idToDreamMap.remove(dream.id);
+    removeDream(dream.id);
 }
 
 void DreamManager::removeDream(const QString &dreamId) {
+    // remove self from parent's child list
+    Dream dream = getDream(dreamId);
+    Dream parent = getDream(dream.parentID);
+    parent.childIDs.removeAll(dreamId);
+    insertDream(parent);
+
     idToDreamMap.remove(dreamId);
 }
 
@@ -50,6 +56,12 @@ QList<Dream> DreamManager::getAllDreams()
 
 Dream DreamManager::getDream(const QString &dreamId) const {
     return idToDreamMap.value(dreamId);
+}
+
+Dream DreamManager::getParentDream(const QString &dreamId)
+{
+    Dream dream = getDream(dreamId);
+    return getDream(dream.parentID);
 }
 
 bool DreamManager::containsDream(const QString &dreamId) const {

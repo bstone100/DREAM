@@ -138,14 +138,26 @@ FullDreamWidget {
 }
 
 AudioRecorderWidget {
-    background-color: #353146;
+    background-color: #2B2742;
     border-radius: 15px;
     border: 0px;
     margin:0px;
     padding:0px;
 }
 
+#yesNoButton:!checked {
+    border: 2px solid @foregroundColor;
+    border-radius: 10px;
+    background-color: transparent;
+    color: @foregroundColor;
+}
 
+#yesNoButton:checked {
+    border: 2px solid @foregroundColor;
+    border-radius: 10px;
+    background-color: @foregroundColor;
+    color: @backgroundColor;
+}
 
 
 

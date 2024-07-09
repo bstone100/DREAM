@@ -22,6 +22,7 @@ public:
     QList<Dream> getAllDreams();
 
     Dream getDream(const QString &dreamId) const;
+    Dream getParentDream(const QString &dreamId);
     bool containsDream(const QString &dreamId) const;
     void clearDreams();
 
